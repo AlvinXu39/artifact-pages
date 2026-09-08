@@ -1,0 +1,4 @@
+interface:
+  display_name: Artifact Pages Publisher
+  short_description: Publish a local file to public GitHub Pages
+  default_prompt: Publish the specified local file to artifact-pages and return its live GitHub Pages link.
