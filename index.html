@@ -1,0 +1,467 @@
+<title>Air8 洞察流水线</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  :root{
+    --ground:#f6f7f9;
+    --panel:#ffffff;
+    --panel-2:#eef0f4;
+    --ink:#171b24;
+    --ink-2:#3d4453;
+    --muted:#6b7383;
+    --rule:#dfe3ea;
+    --rule-soft:#eceff4;
+    --accent:#2f4bc4;
+
+    --ship:#146b4a;  --ship-bg:#e6f4ed;  --ship-line:#1c7a55;
+    --plan:#8f5a06;  --plan-bg:#fcf1de;  --plan-line:#b0700d;
+    --gap:#9d2f3e;   --gap-bg:#fce3e7;   --gap-line:#b03a4a;
+    --ext:#4c5566;   --ext-bg:#eaedf1;   --ext-line:#5b6478;
+
+    --shadow:0 1px 2px rgba(20,26,40,.05), 0 10px 24px -20px rgba(20,26,40,.45);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#11141b; --panel:#181c25; --panel-2:#1f2531;
+      --ink:#e6e9ef; --ink-2:#c2c8d4; --muted:#8d95a5;
+      --rule:#2a313f; --rule-soft:#222835; --accent:#7b93f0;
+      --ship:#5fd0a2; --ship-bg:#14332b; --ship-line:#2f9d72;
+      --plan:#e8b25c; --plan-bg:#342810; --plan-line:#b8842c;
+      --gap:#f08a97;  --gap-bg:#381b21;  --gap-line:#b3505e;
+      --ext:#9aa3b3;  --ext-bg:#242a37;  --ext-line:#5b6478;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 30px -24px rgba(0,0,0,.9);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#11141b; --panel:#181c25; --panel-2:#1f2531;
+    --ink:#e6e9ef; --ink-2:#c2c8d4; --muted:#8d95a5;
+    --rule:#2a313f; --rule-soft:#222835; --accent:#7b93f0;
+    --ship:#5fd0a2; --ship-bg:#14332b; --ship-line:#2f9d72;
+    --plan:#e8b25c; --plan-bg:#342810; --plan-line:#b8842c;
+    --gap:#f08a97;  --gap-bg:#381b21;  --gap-line:#b3505e;
+    --ext:#9aa3b3;  --ext-bg:#242a37;  --ext-line:#5b6478;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 30px -24px rgba(0,0,0,.9);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground); color:var(--ink);
+    font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Source Han Sans SC","Noto Sans CJK SC",system-ui,sans-serif;
+    font-size:15px; line-height:1.7; margin:0; padding:0 22px 80px;
+  }
+  .mono{font-family:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .wrap{max-width:1240px;margin:0 auto}
+
+  /* ── masthead ── */
+  header{padding:44px 0 22px}
+  .eyebrow{
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 12px;
+  }
+  h1{font-size:clamp(25px,3.4vw,34px);line-height:1.25;font-weight:700;letter-spacing:-.01em;margin:0 0 12px;text-wrap:balance}
+  .stand{font-size:15.5px;color:var(--ink-2);margin:0;max-width:66ch}
+  .stand b{color:var(--ink);font-weight:600}
+
+  /* ── legend strip ── */
+  .legend{
+    display:flex;flex-wrap:wrap;gap:7px 22px;align-items:center;
+    margin:24px 0 30px;padding:12px 0;
+    border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);
+  }
+  .legend b{
+    display:inline-flex;align-items:center;gap:7px;
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  }
+  .legend b::before{content:"";width:10px;height:10px;border-radius:2px;border:2px solid}
+  .legend .date{margin-left:auto;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;color:var(--muted)}
+  .l-ship{color:var(--ship)} .l-ship::before{background:var(--ship-bg);border-color:var(--ship-line)}
+  .l-plan{color:var(--plan)} .l-plan::before{background:var(--plan-bg);border-color:var(--plan-line)}
+  .l-gap{color:var(--gap)}   .l-gap::before{background:var(--gap-bg);border-color:var(--gap-line)}
+  .l-ext{color:var(--ext)}   .l-ext::before{background:var(--ext-bg);border-color:var(--ext-line)}
+
+  /* ── the diagram ── */
+  .flowchart{border-top:1px solid var(--rule-soft)}
+
+  .lane{
+    display:grid;
+    grid-template-columns:52px minmax(0,1fr) 288px;
+    gap:0 26px;
+    padding:24px 0;
+    border-bottom:1px solid var(--rule-soft);
+  }
+  .lane:last-child{border-bottom:0}
+
+  .rail{position:relative;padding-top:2px}
+  .rail .num{
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.04em;
+  }
+  .rail .nm{display:block;font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.35}
+  .rail::after{
+    content:"";position:absolute;left:5px;top:34px;bottom:-24px;
+    width:1px;background:var(--rule);
+  }
+  .lane:last-child .rail::after{display:none}
+
+  .flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:9px}
+
+  .node{
+    flex:0 1 auto;min-width:0;
+    background:var(--panel);border:1px solid var(--rule);border-left-width:3px;
+    border-radius:3px;padding:9px 13px;box-shadow:var(--shadow);
+  }
+  .node .act{display:block;font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.45}
+  .node .cmp{
+    display:block;font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:10.5px;color:var(--muted);margin-top:2px;letter-spacing:.01em;
+  }
+  .n-ship{border-left-color:var(--ship-line)}
+  .n-plan{border-left-color:var(--plan-line);background:var(--plan-bg)}
+  .n-gap {border-left-color:var(--gap-line);background:var(--gap-bg);border-color:var(--gap-line)}
+  .n-gap .act{color:var(--gap)}
+  .n-ext {border-left-color:var(--ext-line);background:var(--ext-bg)}
+  .n-db  {border-style:dashed}
+
+  .arw{
+    align-self:center;color:var(--muted);flex:0 0 auto;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:14px;
+  }
+
+  .note{
+    font-size:12.5px;line-height:1.65;color:var(--ink-2);
+    border-left:2px solid var(--rule);padding-left:15px;
+  }
+  .note b{color:var(--ink);font-weight:600}
+  .note .flag{
+    display:block;font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    margin-bottom:5px;
+  }
+  .note.warn{border-left-color:var(--gap-line)}
+  .note.warn .flag{color:var(--gap)}
+  .note.plan{border-left-color:var(--plan-line)}
+  .note.plan .flag{color:var(--plan)}
+  .note.ok .flag{color:var(--ship)}
+
+  code{
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.88em;
+    background:var(--panel-2);padding:1px 4px;border-radius:2px;color:var(--ink);
+  }
+
+  /* ── collapsed detail ── */
+  details{border-top:1px solid var(--rule);margin-top:0}
+  details:last-of-type{border-bottom:1px solid var(--rule)}
+  summary{
+    cursor:pointer;list-style:none;padding:16px 2px;
+    display:flex;align-items:center;gap:11px;font-size:14px;font-weight:600;color:var(--ink);
+  }
+  summary::-webkit-details-marker{display:none}
+  summary::before{
+    content:"+";font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:14px;font-weight:700;color:var(--accent);width:13px;
+  }
+  details[open] summary::before{content:"–"}
+  summary .hint{margin-left:auto;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;color:var(--muted);font-weight:400}
+  summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .body{padding:2px 0 26px 24px}
+
+  .stages{width:100%;border-collapse:collapse;font-size:13.5px}
+  .stages th{
+    text-align:left;font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);
+    font-weight:500;padding:0 14px 8px 0;border-bottom:1px solid var(--rule);
+  }
+  .stages td{padding:13px 14px 13px 0;border-bottom:1px solid var(--rule-soft);vertical-align:top;color:var(--ink-2)}
+  .stages tr:last-child td{border-bottom:0}
+  .stages td:first-child{width:24%;color:var(--ink);font-weight:600}
+  .stages .comp{display:block;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:10.5px;font-weight:400;color:var(--muted);margin-top:2px}
+  .pill{
+    display:inline-block;padding:2px 8px;border-radius:2px;white-space:nowrap;
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    font-size:10px;font-weight:700;letter-spacing:.05em;border:1px solid;
+  }
+  .p-ship{color:var(--ship);background:var(--ship-bg);border-color:var(--ship-line)}
+  .p-plan{color:var(--plan);background:var(--plan-bg);border-color:var(--plan-line)}
+  .p-gap{color:var(--gap);background:var(--gap-bg);border-color:var(--gap-line)}
+
+  .scale{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:3px;overflow:hidden}
+  .scale div{background:var(--panel);padding:16px 18px}
+  .scale .n{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:24px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .scale .n small{font-size:12px;font-weight:500;color:var(--muted);margin-left:3px}
+  .scale .l{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5}
+  .scale .hi .n{color:var(--gap)}
+
+  ol.next{margin:0;padding:0;list-style:none;counter-reset:n}
+  ol.next li{counter-increment:n;position:relative;padding:13px 0 13px 42px;border-bottom:1px solid var(--rule-soft);font-size:13.5px;color:var(--ink-2)}
+  ol.next li:last-child{border-bottom:0}
+  ol.next li::before{
+    content:counter(n,decimal-leading-zero);position:absolute;left:0;top:14px;
+    font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;font-weight:700;color:var(--accent);
+  }
+  ol.next b{color:var(--ink);font-weight:600}
+
+  footer{margin-top:34px;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;color:var(--muted);line-height:1.9}
+
+  @media (max-width:900px){
+    .lane{grid-template-columns:44px minmax(0,1fr);gap:0 16px}
+    .note{grid-column:2;margin-top:14px;padding-left:13px}
+    .rail::after{bottom:-24px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Air8 · 供应链金融情报中台</p>
+    <h1>从每日新闻到专家审批的洞察流水线</h1>
+    <p class="stand">
+      共五段。<b>首尾已在生产运行，中间有两处断点</b> ——
+      洞察写进数据库后没有程序把它送到专家面前；专家审批的结果也回不到洞察库。
+    </p>
+  </header>
+
+  <div class="legend">
+    <b class="l-ship">已实现</b>
+    <b class="l-plan">已设计待实现</b>
+    <b class="l-gap">缺口</b>
+    <b class="l-ext">人工 / 外部</b>
+    <span class="date">状态截至 2026-09-08 · 仓库实况核查</span>
+  </div>
+
+  <div class="flowchart">
+
+    <div class="lane">
+      <div class="rail"><span class="num">01</span><span class="nm">每日抓取</span></div>
+      <div class="flow">
+        <div class="node n-ship">
+          <span class="act">抓取 · 去重 · A/B/C/D 评级</span>
+          <span class="cmp">air8-daily-market-intel</span>
+        </div>
+        <span class="arw">→</span>
+        <div class="node n-ship n-db">
+          <span class="act">Market Intelligence</span>
+          <span class="cmp">Notion · label · item_status</span>
+        </div>
+      </div>
+      <aside class="note ok">
+        <span class="flag">已在生产运行</span>
+        每日 08:00 定时跑。<b>A 类是整条链路的流量闸门</b>——规则上限 3 条/天，
+        实测最近 10 天平均 1.2 条/天。影响评分不必新建，直接沿用这套已上线的四闸评级。
+      </aside>
+    </div>
+
+    <div class="lane">
+      <div class="rail"><span class="num">02</span><span class="nm">扇出选客户</span></div>
+      <div class="flow">
+        <div class="node n-plan">
+          <span class="act">轮询 A 类待处理</span>
+          <span class="cmp">air8-insight-fanout</span>
+        </div>
+        <span class="arw">→</span>
+        <div class="node n-plan">
+          <span class="act">筛选 · 排序取 Top-5</span>
+          <span class="cmp">ARP Active 为第一信号</span>
+        </div>
+        <span class="arw">→</span>
+        <div class="node n-plan n-db">
+          <span class="act">查公司编码</span>
+          <span class="cmp">Notion Suppliers · 待建</span>
+        </div>
+        <span class="arw">→</span>
+        <div class="node n-ship">
+          <span class="act">客户核实</span>
+          <span class="cmp">kb-validation-agent CP3.5</span>
+        </div>
+      </div>
+      <aside class="note plan">
+        <span class="flag">设计已定稿，代码未写</span>
+        <b>Suppliers 库是硬前置。</b>现有 320 家客户只有公司名、没有编码，
+        而洞察入库必须要编码——库空着，这一段跑不起来。<br>
+        客户核实是已有能力，直接复用，不用重做。
+      </aside>
+    </div>
+
+    <div class="lane">
+      <div class="rail"><span class="num">03</span><span class="nm">生成与落库</span></div>
+      <div class="flow">
+        <div class="node n-ship">
+          <span class="act">研究 · 撰写 · 校验</span>
+          <span class="cmp">supplier-news-impact</span>
+        </div>
+        <span class="arw">→</span>
+        <div class="node n-ship">
+          <span class="act">拆成 8 个内容块</span>
+          <span class="cmp">extract_blocks.py → n8n</span>
+        </div>
+        <span class="arw">→</span>
+        <div class="node n-ship n-db">
+          <span class="act">洞察卡入库</span>
+          <span class="cmp">MySQL · PENDING_REVIEW</span>
+        </div>
+      </div>
+      <aside class="note ok">
+        <span class="flag">已在生产运行</span>
+        今天实跑并真实入库，编号 <code>C0000785-C15</code>。<br>
+        中英双语存储<b>已设计未实现</b>；深浅两套配色<b>不进数据库</b>——
+        已验证两版正文逐字节相同，配色由前端挂样式表决定。
+      </aside>
+    </div>
+
+    <div class="lane">
+      <div class="rail"><span class="num">04</span><span class="nm">同步到专家</span></div>
+      <div class="flow">
+        <div class="node n-gap">
+          <span class="act">洞察卡 → 专家任务</span>
+          <span class="cmp">尚无实现</span>
+        </div>
+        <span class="arw">→</span>
+        <div class="node n-ship">
+          <span class="act">建任务 · 挂附件</span>
+          <span class="cmp">air8-create-common-expert-task</span>
+        </div>
+        <span class="arw">→</span>
+        <div class="node n-ship">
+          <span class="act">每 20 分钟派发</span>
+          <span class="cmp">expert_send.py</span>
+        </div>
+      </div>
+      <aside class="note warn">
+        <span class="flag">断点一</span>
+        建任务、挂附件、定时派发<b>都已经有了</b>，缺的只是中间那一步搬运。<br>
+        但它不只是接根管子：洞察卡里存的是 HTML 块，而专家评审那套命令是往纯文本字段写的，
+        中间必须加一道 <b>HTML → Markdown 提取</b>，这道工序目前不存在。
+      </aside>
+    </div>
+
+    <div class="lane">
+      <div class="rail"><span class="num">05</span><span class="nm">审批与反写</span></div>
+      <div class="flow">
+        <div class="node n-ext">
+          <span class="act">专家</span>
+          <span class="cmp">Telegram</span>
+        </div>
+        <span class="arw">→</span>
+        <div class="node n-ship">
+          <span class="act">归因 · 审批判定</span>
+          <span class="cmp">expert-review-common</span>
+        </div>
+        <span class="arw">→</span>
+        <div class="node n-gap">
+          <span class="act">反写洞察库</span>
+          <span class="cmp">尚无实现</span>
+        </div>
+        <span class="arw">→</span>
+        <div class="node n-ext">
+          <span class="act">客户端仪表盘</span>
+          <span class="cmp">对外呈现</span>
+        </div>
+      </div>
+      <aside class="note warn">
+        <span class="flag">断点二</span>
+        专家的结论目前<b>只写到 Notion 为止</b>——代码里有一道显式护栏，
+        只允许写专家任务这一个目标。<br>
+        后果：专家点了「同意」，洞察库里那行仍停在待审状态，<b>客户端永远看不到已审批的洞察</b>。
+      </aside>
+    </div>
+
+  </div>
+
+  <details>
+    <summary>逐段状态与证据<span class="hint">11 项 · 绿色均可指出运行结果</span></summary>
+    <div class="body">
+      <table class="stages">
+        <thead><tr><th>环节</th><th>状态</th><th>证据 / 说明</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>① 每日抓取与评级<span class="comp">air8-daily-market-intel</span></td>
+            <td><span class="pill p-ship">已实现</span></td>
+            <td>每日 08:00 cron 在跑。A/B/C/D 四闸 rubric 已上线，A 每日硬上限 3 条。实测最近 10 天产出 A 共 12 条，平均 1.2 条/天。</td>
+          </tr>
+          <tr>
+            <td>② 扇出：选客户<span class="comp">air8-insight-fanout（新建）</span></td>
+            <td><span class="pill p-plan">已设计</span></td>
+            <td>设计文档已定稿：每事件取 Top-5，<code>ARP Active</code> 为第一排序信号。与现有批次推送 skill 同构（轮询状态 → 处理 → 回写）。</td>
+          </tr>
+          <tr>
+            <td>&nbsp;&nbsp;└ 供应商编码表<span class="comp">Notion Suppliers 库</span></td>
+            <td><span class="pill p-plan">待建</span></td>
+            <td>字段清单已交付，由业务侧手工维护。<b>硬前置</b>：现有 320 家客户全部按公司名索引，没有编码。</td>
+          </tr>
+          <tr>
+            <td>&nbsp;&nbsp;└ 客户核实<span class="comp">kb-validation-agent CP3.5</span></td>
+            <td><span class="pill p-ship">已实现</span></td>
+            <td>已有能力，直接复用。历史真实跑量：一个广谱美国关税事件匹配出 99–103 家客户。</td>
+          </tr>
+          <tr>
+            <td>③ 生成文章<span class="comp">supplier-news-impact</span></td>
+            <td><span class="pill p-ship">已实现</span></td>
+            <td>联网研究 + 6 份知识库 + 撰写 + 结构校验，全链路已跑通。</td>
+          </tr>
+          <tr>
+            <td>&nbsp;&nbsp;└ 拆块入库<span class="comp">extract_blocks.py → n8n</span></td>
+            <td><span class="pill p-ship">已实现</span></td>
+            <td>2026-09-08 实跑并真实入库，返回 <code>card_id = C0000785-C15</code>。按原 HTML 的 div 块拆成 8 块，样式与标签原样保留。</td>
+          </tr>
+          <tr>
+            <td>&nbsp;&nbsp;└ 中英双语存储<span class="comp">lang 列 + 复合主键</span></td>
+            <td><span class="pill p-plan">已设计</span></td>
+            <td>同一张卡两行，专家审一次管两种语言。配色不进库——两版正文已验证逐字节相同。</td>
+          </tr>
+          <tr>
+            <td>④ 同步到专家任务<span class="comp">桥接程序</span></td>
+            <td><span class="pill p-gap">缺口</span></td>
+            <td>建任务的能力已有，缺搬运这一步，且卡在 HTML → Markdown 的提取上。</td>
+          </tr>
+          <tr>
+            <td>&nbsp;&nbsp;└ 建任务与派发<span class="comp">air8-create-common-expert-task · expert_send.py</span></td>
+            <td><span class="pill p-ship">已实现</span></td>
+            <td>建 Common Review 行、挂 Notion 原生附件、每 20 分钟派发 cron，均已上线。</td>
+          </tr>
+          <tr>
+            <td>⑤ 专家审批<span class="comp">expert-review-common</span></td>
+            <td><span class="pill p-ship">已实现</span></td>
+            <td>Telegram 收反馈、逐条归因、判定通过或退改，写回 Notion 的任务状态。</td>
+          </tr>
+          <tr>
+            <td>&nbsp;&nbsp;└ 反写洞察库<span class="comp">Notion → MySQL</span></td>
+            <td><span class="pill p-gap">缺口</span></td>
+            <td>护栏 <code>writeback.allowed_targets("common")</code> 目前只允许写专家任务表。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <details>
+    <summary>为什么限量到每事件 5 家<span class="hint">全量方案 120 篇/天，不可行</span></summary>
+    <div class="body">
+      <div class="scale">
+        <div><div class="n">1.2<small>条/天</small></div><div class="l">A 类新闻实测产量<br>（最近 10 天共 12 条）</div></div>
+        <div><div class="n">~100<small>家</small></div><div class="l">单个广谱事件的<br>受影响客户数</div></div>
+        <div class="hi"><div class="n">120<small>篇/天</small></div><div class="l">全量方案的产出量<br>算力与专家两端都压垮</div></div>
+        <div><div class="n">6<small>篇/天</small></div><div class="l">Top-5 方案的产出量<br>专家侧可消化</div></div>
+      </div>
+    </div>
+  </details>
+
+  <details>
+    <summary>下一步<span class="hint">按依赖顺序 · 5 项</span></summary>
+    <div class="body">
+      <ol class="next">
+        <li><b>业务侧建 Notion Suppliers 库，录入 320 家的公司编码。</b>硬前置——库空着，整条扇出链路跑不起来。字段清单已交付。</li>
+        <li><b>补上「洞察卡 → 专家任务」这座桥</b>，含 HTML → Markdown 提取。两处断点里更急的一个：不补，生成出来的洞察没人看得到。</li>
+        <li><b>打通「审批结果 → 洞察库」的反写</b>，放开写回目标的护栏。不补，专家的「同意」传导不到客户端。</li>
+        <li><b>实现扇出程序。</b>设计已定稿，等第 1 步的数据到位。</li>
+        <li><b>中英双语存储</b>可与上述并行，但数据库迁移必须排在扇出大量写库之前——否则编号错乱的影响面会被放大数倍。</li>
+      </ol>
+    </div>
+  </details>
+
+  <footer>
+    状态基于 2026-09-08 的代码仓库实况核查，非计划推演。<br>
+    绿色环节均可指出具体文件与已产生的运行结果；红色环节在仓库中不存在对应实现。
+  </footer>
+
+</div>
