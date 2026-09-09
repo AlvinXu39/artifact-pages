@@ -1,0 +1,21 @@
+/* air8-news-standalone — dark theme
+   Token values only. Pair with air8-news-standalone.base.css.
+   Palette follows the Air8 supplier-portal insights page (template-insights.html):
+   #0f1219 ground, #1a1f2e surface, #242b3d elevated, #2d3548 border,
+   #e2e8f0 text, #94a3b8 muted, plus its blue/amber/red/green accents.
+   --red is lifted to #f87171 (from the portal's #ef4444) so the .tm.hi label
+   clears 4.5:1 against --red-soft; every other accent uses the portal value.
+   Generated from assets/air8-news-standalone.template.html. Do not hand-edit one
+   theme only: token names must stay identical across light and dark. */
+
+.actionable-ins-scope{
+ --paper:#0f1219; --surface:#1a1f2e; --surface-2:#242b3d;
+ --chrome:#0f1219; --chrome-2:#1a1f2e; --chrome-ink:#94a3b8;
+ --ink:#e2e8f0; --ink-2:#cbd5e1; --muted:#94a3b8;
+ --rule:#2d3548; --rule-soft:#242b3d;
+ --indigo:#3b82f6; --indigo-soft:#1f2d4a;
+ --amber:#f59e0b; --amber-soft:#393129;
+ --red:#f87171; --red-soft:#392a37;
+ --green:#10b981; --green-soft:#19353a;
+ --shadow:0 1px 2px rgba(0,0,0,.4), 0 16px 40px -30px rgba(0,0,0,.95);
+}
