@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A8-53 — DB Loan Disbursement Monthly Chart</title>
+  <style>
+    :root { color-scheme: light; --ink:#182230; --muted:#667085; --line:#e5e7eb; --panel:#fff; --bg:#f4f7fb; --blue:#2563eb; --orange:#ea580c; --red:#b42318; --green:#087443; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; color:var(--ink); background:var(--bg); }
+    .shell { max-width:1180px; margin:0 auto; padding:32px 22px 48px; }
+    .eyebrow { color:#475467; font-size:12px; font-weight:800; letter-spacing:.11em; text-transform:uppercase; }
+    h1 { margin:8px 0 10px; font-size:clamp(25px,4vw,38px); line-height:1.1; }
+    .lede { max-width:760px; margin:0; color:var(--muted); line-height:1.55; }
+    .review-note { margin-top:18px; padding:12px 14px; border:1px solid #bfdbfe; border-radius:10px; background:#eff6ff; color:#1e3a8a; font-size:13px; }
+    .toolbar { display:flex; flex-wrap:wrap; gap:8px; margin:24px 0 16px; }
+    button { appearance:none; border:1px solid #cbd5e1; border-radius:8px; background:#fff; color:#344054; padding:9px 12px; font-weight:700; cursor:pointer; }
+    button:hover, button:focus-visible { border-color:var(--blue); outline:3px solid #dbeafe; }
+    button.active { color:#fff; background:#1d4ed8; border-color:#1d4ed8; }
+    .status { display:flex; justify-content:space-between; gap:14px; align-items:center; margin-bottom:16px; padding:12px 14px; border-radius:10px; background:#fff; border:1px solid var(--line); font-size:14px; }
+    .status strong { display:block; margin-bottom:3px; }
+    .status span { color:var(--muted); }
+    .pill { border-radius:999px; padding:5px 10px; font-size:12px; font-weight:800; white-space:nowrap; color:var(--green); background:#ecfdf3; }
+    .pill.warn { color:#9a3412; background:#fff7ed; }
+    .pill.error { color:var(--red); background:#fef3f2; }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; box-shadow:0 8px 24px rgba(16,24,40,.06); overflow:hidden; }
+    .card-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:20px 22px 6px; }
+    .card-head h2 { margin:0; font-size:18px; }
+    .card-head p { margin:5px 0 0; color:var(--muted); font-size:13px; }
+    .chart-wrap { padding:12px 18px 20px; }
+    svg { display:block; width:100%; height:auto; min-height:350px; }
+    .grid { stroke:#e5e7eb; stroke-width:1; }
+    .axis { fill:#667085; font-size:11px; }
+    .month { fill:#475467; font-size:11px; text-anchor:middle; }
+    .amount-line { fill:none; stroke:var(--blue); stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+    .interest-line { fill:none; stroke:var(--orange); stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+    .amount-dot { fill:#fff; stroke:var(--blue); stroke-width:3; }
+    .interest-dot { fill:#fff; stroke:var(--orange); stroke-width:3; }
+    .legend { display:flex; flex-wrap:wrap; gap:18px; margin:8px 4px 0; color:#475467; font-size:13px; }
+    .key { display:inline-flex; gap:7px; align-items:center; }
+    .swatch { width:22px; height:3px; border-radius:9px; }
+    .swatch.blue { background:var(--blue); } .swatch.orange { background:var(--orange); }
+    .hidden-state { padding:48px 24px; text-align:center; }
+    .hidden-state h2 { margin:0 0 8px; font-size:20px; }
+    .hidden-state p { max-width:570px; margin:0 auto; color:var(--muted); line-height:1.55; }
+    .error-box { margin:22px; padding:16px; border:1px solid #fda29b; border-radius:10px; background:#fff6f5; color:#912018; }
+    .detail { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:16px; }
+    .detail div { padding:12px; border:1px solid var(--line); border-radius:10px; background:#f8fafc; }
+    .detail b { display:block; font-size:12px; color:#667085; margin-bottom:4px; }
+    .detail span { font-size:14px; font-weight:750; }
+    .footer { margin-top:18px; color:#667085; font-size:12px; line-height:1.5; }
+    @media (max-width:700px) { .shell{padding:24px 14px 38px}.card-head{padding:17px 16px 4px}.chart-wrap{padding:8px 8px 15px} .detail{grid-template-columns:1fr}.status{align-items:flex-start; flex-direction:column} svg{min-height:300px} }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="eyebrow">Prototype review · A8-53 · Baseline RC-A8-53-20260914-02</div>
+    <h1>DB Loan Disbursement</h1>
+    <p class="lede">Monthly comparison of Finance Amount Total and Interest Amount monthly average on the dashboard. The fixtures below are synthetic review data; they do not represent production records.</p>
+    <div class="review-note"><strong>Review scope:</strong> presentation and state visibility only. Product meaning, permissions, aggregation, units, thresholds, and failure semantics come from the approved baseline.</div>
+
+    <div class="toolbar" aria-label="Prototype review states">
+      <button data-state="normal" class="active">Happy path · 8 months</button>
+      <button data-state="three">Boundary · exactly 3</button>
+      <button data-state="two">Below threshold · 2</button>
+      <button data-state="empty">No valid data</button>
+      <button data-state="connection">Connection unavailable</button>
+      <button data-state="error">Loading/rendering error</button>
+    </div>
+
+    <section class="status" aria-live="polite">
+      <div><strong id="state-title">Readable monthly data</strong><span id="state-description">Eight valid populated months are shown oldest to newest.</span></div>
+      <span id="state-pill" class="pill">Chart visible</span>
+    </section>
+
+    <section id="chart-card" class="card" aria-labelledby="chart-title">
+      <div class="card-head"><div><h2 id="chart-title">Monthly amount and interest</h2><p>Most recent 12 months · Beijing Time (UTC+8) · no filtering</p></div><span class="pill">Synthetic fixture</span></div>
+      <div id="chart-content" class="chart-wrap"></div>
+    </section>
+
+    <section id="user-flow" class="card" aria-labelledby="flow-title" style="margin-top:16px;padding:20px 22px">
+      <h2 id="flow-title" style="margin:0 0 10px;font-size:18px">User flow review</h2>
+      <ol style="margin:0;padding-left:22px;color:#475467;line-height:1.65;font-size:13px">
+        <li>Authorized admin opens the dashboard and reaches the DB Disbursement area. (<code>CI-001</code>, <code>CI-002</code>)</li>
+        <li>System selects the most recent 12 Beijing-Time months, omits empty months, and orders points oldest to newest. (<code>R-001</code>, <code>R-004</code>)</li>
+        <li>System renders separate amount and interest lines when at least 3 valid months exist. (<code>R-002</code>, <code>R-003</code>, <code>R-007</code>)</li>
+        <li>If the source is unavailable, the function is hidden; another loading/rendering failure keeps the module visible with the approved error message. (<code>R-005</code>, <code>R-006</code>)</li>
+      </ol>
+    </section>
+
+    <div class="detail">
+      <div><b>Left axis</b><span>Finance Amount Total · USD millions</span></div>
+      <div><b>Right axis</b><span>Interest Amount monthly average · USD</span></div>
+      <div><b>Final display</b><span>2 decimals · standard rounding</span></div>
+    </div>
+    <p class="footer">Traceability: <code>R-001</code>–<code>R-007</code>, <code>AC-001</code>–<code>AC-006</code>, <code>CI-005</code>, <code>CI-006</code>, <code>CI-009</code>, <code>CI-010</code>, <code>CI-012</code>, <code>CI-013</code>, <code>CI-014</code>, and <code>CI-016</code>. The prototype does not add a Purchase Price series.</p>
+  </main>
+  <script>
+    const fixtures = {
+      normal: { title:'Readable monthly data', description:'Eight valid populated months are shown oldest to newest.', pill:'Chart visible', kind:'chart', months:['Nov 25','Dec 25','Jan 26','Feb 26','Mar 26','Apr 26','May 26','Jun 26'], amount:[1.18,2.46,1.92,3.14,2.77,4.05,3.62,4.48], interest:[18420,26750,22980,34210,31540,39200,36580,43110] },
+      three: { title:'Boundary: exactly 3 valid months', description:'Exactly three valid populated months display normally.', pill:'Chart visible', kind:'chart', months:['Apr 26','May 26','Jun 26'], amount:[4.05,3.62,4.48], interest:[39200,36580,43110] },
+      two: { title:'Below the approved threshold', description:'Only two valid populated months remain; the entire module is hidden.', pill:'Module hidden', pillClass:'warn', kind:'hidden', heading:'DB Disbursement is not displayed', message:'The chart requires at least 3 valid populated calendar months. Empty months and invalid records are omitted before this count.' },
+      empty: { title:'No valid monthly data', description:'No valid populated months remain in the selected window.', pill:'Module hidden', pillClass:'warn', kind:'hidden', heading:'No chart data to display', message:'The DB Disbursement module is hidden because there are fewer than 3 valid populated months.' },
+      connection: { title:'Connection unavailable', description:'The existing DB loan source cannot be reached.', pill:'Function hidden', pillClass:'warn', kind:'hidden', heading:'DB Disbursement is unavailable', message:'The chart/function is not displayed while the connection is unavailable.' },
+      error: { title:'Loading or rendering failure', description:'The module stays visible and provides a user-facing recovery message.', pill:'Needs recovery', pillClass:'error', kind:'error' }
+    };
+    const chartContent = document.getElementById('chart-content');
+    const chartCard = document.getElementById('chart-card');
+    const stateTitle = document.getElementById('state-title');
+    const stateDescription = document.getElementById('state-description');
+    const statePill = document.getElementById('state-pill');
+
+    function esc(value) { return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+    function linePath(values, x, y) { return values.map((v,i) => `${i ? 'L' : 'M'} ${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' '); }
+    function chartSvg(f) {
+      const w=920, h=390, left=66, right=66, top=28, bottom=56, plotW=w-left-right, plotH=h-top-bottom;
+      const maxAmount=Math.max(...f.amount)*1.18, maxInterest=Math.max(...f.interest)*1.18;
+      const x=i => left + (f.months.length===1 ? plotW/2 : i*plotW/(f.months.length-1));
+      const yAmount=v => top + plotH - (v/maxAmount)*plotH;
+      const yInterest=v => top + plotH - (v/maxInterest)*plotH;
+      const grid=[0,.25,.5,.75,1];
+      const amountTicks=grid.map(p => `<text class="axis" x="${left-10}" y="${(top+plotH-p*plotH+4).toFixed(1)}" text-anchor="end">${(maxAmount*p).toFixed(2)}</text>`).join('');
+      const interestTicks=grid.map(p => `<text class="axis" x="${w-right+10}" y="${(top+plotH-p*plotH+4).toFixed(1)}">${Math.round(maxInterest*p).toLocaleString()}</text>`).join('');
+      const gridLines=grid.map(p => `<line class="grid" x1="${left}" y1="${(top+plotH-p*plotH).toFixed(1)}" x2="${w-right}" y2="${(top+plotH-p*plotH).toFixed(1)}"/>`).join('');
+      const months=f.months.map((m,i)=>`<text class="month" x="${x(i).toFixed(1)}" y="${h-25}">${esc(m)}</text>`).join('');
+      const amountDots=f.amount.map((v,i)=>`<circle class="amount-dot" cx="${x(i).toFixed(1)}" cy="${yAmount(v).toFixed(1)}" r="5"><title>${esc(f.months[i])}: ${v.toFixed(2)} USD M</title></circle>`).join('');
+      const interestDots=f.interest.map((v,i)=>`<circle class="interest-dot" cx="${x(i).toFixed(1)}" cy="${yInterest(v).toFixed(1)}" r="5"><title>${esc(f.months[i])}: ${v.toFixed(2)} USD</title></circle>`).join('');
+      return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Monthly Finance Amount Total and Interest Amount monthly average line chart"><text class="axis" transform="translate(16 ${top+plotH/2}) rotate(-90)" text-anchor="middle">USD millions</text><text class="axis" transform="translate(${w-14} ${top+plotH/2}) rotate(90)" text-anchor="middle">USD</text>${gridLines}${amountTicks}${interestTicks}<path class="amount-line" d="${linePath(f.amount,x,yAmount)}"/><path class="interest-line" d="${linePath(f.interest,x,yInterest)}"/>${amountDots}${interestDots}${months}</svg><div class="legend"><span class="key"><i class="swatch blue"></i>Finance Amount Total · USD M</span><span class="key"><i class="swatch orange"></i>Interest Amount monthly average · USD</span></div>`;
+    }
+    function render(key) {
+      const f=fixtures[key];
+      stateTitle.textContent=f.title; stateDescription.textContent=f.description; statePill.textContent=f.pill; statePill.className=`pill ${f.pillClass||''}`;
+      if (f.kind==='chart') { chartCard.hidden=false; chartContent.innerHTML=chartSvg(f); }
+      else if (f.kind==='hidden') { chartCard.hidden=false; chartContent.innerHTML=`<div class="hidden-state"><h2>${esc(f.heading)}</h2><p>${esc(f.message)}</p></div>`; }
+      else { chartCard.hidden=false; chartContent.innerHTML='<div class="error-box"><strong>Unable to load chart data. Please try again later.</strong><br><span>The module remains visible while avoiding misleading chart values.</span></div>'; }
+      document.querySelectorAll('button[data-state]').forEach(btn=>btn.classList.toggle('active',btn.dataset.state===key));
+    }
+    document.querySelectorAll('button[data-state]').forEach(btn=>btn.addEventListener('click',()=>render(btn.dataset.state)));
+    render('normal');
+  </script>
+</body>
+</html>
