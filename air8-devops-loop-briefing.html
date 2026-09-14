@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Air8 DevOps 交付控制简报</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #12202b;
+      --muted: #5c6d7a;
+      --line: #c9d4dc;
+      --paper: #eef2f5;
+      --panel: #fbfcfd;
+      --rail: #101920;
+      --rail-ink: #d7e0e7;
+      --signal: #d15a12;
+      --pass: #0f6b4c;
+      --auto: #1a5f8a;
+      --hold: #8a5a12;
+      --white: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "IBM Plex Sans", "Source Han Sans SC", "Noto Sans SC", sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+    a { color: var(--auto); }
+    button, .seg button { font-family: inherit; }
+    .app {
+      display: grid;
+      grid-template-columns: 228px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+    nav.rail {
+      background: var(--rail);
+      color: var(--rail-ink);
+      padding: 28px 18px 40px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+    }
+    nav.rail .mark {
+      font-family: "Barlow Condensed", sans-serif;
+      font-size: 28px;
+      letter-spacing: 0.04em;
+      font-weight: 700;
+      color: #fff;
+    }
+    nav.rail .mark span { color: var(--signal); }
+    nav.rail .seg.lang {
+      margin: 12px 0 16px;
+      border-color: #4a5d6a;
+    }
+    nav.rail .seg.lang button { color: #d7e0e7; }
+    nav.rail .seg.lang button[aria-pressed="true"] {
+      background: #fff;
+      color: var(--ink);
+    }
+    nav.rail p.sub {
+      margin: 0 0 28px;
+      color: #8ea0ad;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    nav.rail a {
+      display: block;
+      color: #b7c6d0;
+      text-decoration: none;
+      padding: 8px 0;
+      border-top: 1px solid #24323c;
+      font-size: 13.5px;
+    }
+    nav.rail a:hover, nav.rail a:focus { color: #fff; }
+    nav.rail a:focus-visible { outline: 2px solid #7eb3d4; outline-offset: 2px; }
+    main { padding: 28px 28px 80px; max-width: none; }
+    header.top {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    h1 {
+      font-family: "Barlow Condensed", sans-serif;
+      font-size: clamp(30px, 3.6vw, 40px);
+      line-height: 1.08;
+      font-weight: 700;
+      margin: 0;
+      max-width: 18em;
+    }
+    .lede { margin: 0; max-width: 62ch; color: var(--muted); }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-start; }
+    .control {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .seg {
+      display: inline-flex;
+      border: 1px solid var(--ink);
+      background: var(--white);
+    }
+    .seg button {
+      border: 0;
+      background: transparent;
+      padding: 8px 14px;
+      cursor: pointer;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .seg button[aria-pressed="true"] {
+      background: var(--ink);
+      color: #fff;
+    }
+    .hint { font-size: 12px; color: var(--muted); }
+    section { margin: 48px 0 0; }
+    h2 {
+      font-family: "Barlow Condensed", sans-serif;
+      font-size: 28px;
+      margin: 0 0 6px;
+      font-weight: 650;
+    }
+    h3 { font-size: 16px; margin: 0 0 8px; }
+    .note { color: var(--muted); margin: 0 0 18px; max-width: 72ch; }
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+    }
+    .metrics article {
+      background: var(--panel);
+      padding: 18px 18px 16px;
+    }
+    .metrics strong {
+      display: block;
+      font-family: "Barlow Condensed", sans-serif;
+      font-size: 22px;
+      font-weight: 650;
+      margin-bottom: 6px;
+    }
+    .strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0;
+      border: 1px solid var(--ink);
+      background: var(--white);
+    }
+    .station {
+      text-align: left;
+      border: 0;
+      border-right: 1px solid var(--ink);
+      border-bottom: 1px solid var(--ink);
+      background: var(--white);
+      padding: 12px 10px 14px;
+      cursor: pointer;
+      min-height: 0;
+      color: inherit;
+    }
+    .station:nth-child(3n),
+    .station:last-child { border-right: 0; }
+    .station:nth-child(n+7) { border-bottom: 0; }
+    .station:hover { background: #f3f7fa; }
+    .station[aria-pressed="true"] { background: var(--ink); color: #fff; }
+    .station[aria-pressed="true"] .tag,
+    .station[aria-pressed="true"] .who { color: #c9d6df; }
+    .idx {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      display: block;
+      margin-bottom: 10px;
+      color: var(--muted);
+    }
+    .station b {
+      display: block;
+      font-family: "Barlow Condensed", sans-serif;
+      font-size: 18px;
+      font-weight: 650;
+      line-height: 1.05;
+      margin-bottom: 8px;
+    }
+    .tag, .who { display: block; font-size: 12px; color: var(--muted); }
+    .tag { margin-bottom: 4px; }
+    .detail {
+      border: 1px solid var(--ink);
+      border-top: 0;
+      background: var(--panel);
+      padding: 20px 22px;
+      display: grid;
+      grid-template-columns: 1.3fr 1fr 1fr;
+      gap: 22px;
+    }
+    .detail p { margin: 0; font-size: 14.5px; }
+    .k { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+    .mode-banner {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-left: 4px solid var(--ink);
+      background: var(--white);
+      font-size: 14.5px;
+    }
+    body[data-mode="auto"] .mode-banner { border-left-color: var(--auto); }
+    body[data-mode="manual"] .mode-banner { border-left-color: var(--signal); }
+    .cols-2, .cols-3 { display: grid; gap: 18px; }
+    .cols-2 { grid-template-columns: 1fr 1fr; }
+    .cols-3 { grid-template-columns: 1.1fr 0.9fr 1fr; }
+    .panel {
+      background: var(--white);
+      border: 1px solid var(--line);
+      padding: 18px;
+    }
+    .panel h3 { font-family: "Barlow Condensed", sans-serif; font-size: 22px; }
+    dl { margin: 0; display: grid; grid-template-columns: 110px 1fr; gap: 7px 10px; font-size: 13.5px; }
+    dt { color: var(--muted); }
+    dd { margin: 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--white);
+      font-size: 14px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    th { font-weight: 600; width: 22%; }
+    .no { color: var(--signal); font-weight: 600; }
+    .id-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .id-card code {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 13px;
+      background: #e8eef2;
+      padding: 2px 6px;
+    }
+    .trees {
+      display: grid;
+      grid-template-columns: 160px 1fr 1fr 1fr;
+      gap: 10px;
+      align-items: stretch;
+    }
+    .tree-root, .tree {
+      border: 1px solid var(--ink);
+      padding: 14px;
+      background: var(--white);
+      min-height: 168px;
+    }
+    .tree-root { background: var(--rail); color: #fff; }
+    .tree-root small, .tree small { display: block; color: inherit; opacity: 0.72; font-size: 12px; margin-top: 8px; }
+    .loop {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0;
+      border: 1px solid var(--ink);
+    }
+    .loop div {
+      padding: 12px;
+      border-right: 1px solid var(--ink);
+      background: var(--white);
+      font-size: 13.5px;
+    }
+    .loop div:last-child { border-right: 0; }
+    .loop b { display: block; font-family: "Barlow Condensed", sans-serif; font-size: 18px; margin-bottom: 4px; }
+    ul.tight { margin: 0; padding-left: 18px; }
+    ul.tight li { margin: 4px 0; }
+    .authority {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border: 1px solid var(--ink);
+    }
+    .authority article { padding: 18px 20px; }
+    .authority article:first-child { border-right: 1px solid var(--ink); background: #f6faf8; }
+    .authority article:last-child { background: #fbf6f1; }
+    .next-list {
+      display: grid;
+      gap: 1px;
+      background: var(--line);
+      border: 1px solid var(--line);
+    }
+    .next-list article {
+      background: var(--white);
+      padding: 16px 18px;
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+    .next-list .rank {
+      font-family: "Barlow Condensed", sans-serif;
+      font-size: 22px;
+      color: var(--signal);
+      line-height: 1.1;
+    }
+    .next-list p { margin: 4px 0 0; color: var(--muted); font-size: 14.5px; }
+    footer {
+      margin-top: 56px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12.5px;
+    }
+    @media (max-width: 1180px) {
+      .detail, .cols-3, .id-grid, .trees, .loop {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      nav.rail {
+        position: relative;
+        height: auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px 16px;
+        align-items: baseline;
+        padding: 16px 18px 14px;
+      }
+      nav.rail p.sub { display: none; }
+      nav.rail a { border: 0; padding: 4px 0; }
+      .strip, .detail, .metrics, .cols-2, .cols-3, .id-grid, .trees, .loop, .authority {
+        grid-template-columns: 1fr;
+      }
+      .station, .loop div { border-right: 0; border-bottom: 1px solid var(--ink); }
+      main { padding: 20px 16px 48px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+    }
+    @media print {
+      nav.rail { display: none; }
+      .app { display: block; }
+      body { background: #fff; }
+    }
+  </style>
+</head>
+<body data-mode="manual" data-lang="zh">
+  <div class="app">
+    <nav class="rail" data-i18n-aria="nav_aria">
+      <div class="mark">AIR<span>8</span></div>
+      <div class="seg lang" role="group" data-i18n-aria="lang_aria">
+        <button type="button" class="lang-zh" aria-pressed="true">中文</button>
+        <button type="button" class="lang-en" aria-pressed="false">EN</button>
+      </div>
+      <p class="sub" data-i18n-html="nav_sub"></p>
+      <a href="#why" data-i18n="nav_why"></a>
+      <a href="#flow" data-i18n="nav_flow"></a>
+      <a href="#modules" data-i18n="nav_modules"></a>
+      <a href="#gates" data-i18n="nav_gates"></a>
+      <a href="#parallel" data-i18n="nav_parallel"></a>
+      <a href="#authority" data-i18n="nav_authority"></a>
+      <a href="#measure" data-i18n="nav_measure"></a>
+      <a href="#next" data-i18n="nav_next"></a>
+    </nav>
+    <main>
+      <header class="top">
+        <div>
+          <h1 data-i18n="h1"></h1>
+          <p class="lede" data-i18n="lede"></p>
+        </div>
+        <div class="controls">
+          <div class="control">
+            <div class="seg" role="group" data-i18n-aria="mode_aria">
+              <button type="button" id="mode-manual" aria-pressed="true" data-i18n="mode_manual"></button>
+              <button type="button" id="mode-auto" aria-pressed="false" data-i18n="mode_auto"></button>
+            </div>
+            <div class="hint" id="mode-hint"></div>
+          </div>
+        </div>
+      </header>
+
+      <section id="why">
+        <h2 data-i18n="why_h2"></h2>
+        <p class="note" data-i18n="why_note"></p>
+        <div class="metrics">
+          <article><strong data-i18n="why_1_t"></strong><span data-i18n="why_1"></span></article>
+          <article><strong data-i18n="why_2_t"></strong><span data-i18n="why_2"></span></article>
+          <article><strong data-i18n="why_3_t"></strong><span data-i18n="why_3"></span></article>
+        </div>
+      </section>
+
+      <section id="flow">
+        <h2 data-i18n="flow_h2"></h2>
+        <p class="note" data-i18n="flow_note"></p>
+        <div class="strip" id="strip" role="tablist"></div>
+        <div class="detail" id="detail"></div>
+        <div class="mode-banner" id="mode-banner"></div>
+      </section>
+
+      <section id="modules">
+        <h2 data-i18n="mod_h2"></h2>
+        <p class="note" data-i18n-html="mod_note"></p>
+        <div class="cols-3">
+          <article class="panel">
+            <h3>Supplier Portal</h3>
+            <p class="note" style="margin-bottom:10px" data-i18n="mod_portal_note"></p>
+            <dl>
+              <dt data-i18n="dt_repo"></dt><dd><code>C:/aiproject/air8-supplier-portal</code></dd>
+              <dt data-i18n="dt_base"></dt><dd><code>origin/master</code></dd>
+              <dt>PR</dt><dd>CodeCommit</dd>
+              <dt data-i18n="dt_deploy"></dt><dd data-i18n="mod_portal_deploy"></dd>
+            </dl>
+          </article>
+          <article class="panel">
+            <h3>Refactoring</h3>
+            <p class="note" style="margin-bottom:10px" data-i18n="mod_ref_note"></p>
+            <dl>
+              <dt data-i18n="dt_repo"></dt><dd><code>C:/aiproject/air8-refactoring</code></dd>
+              <dt data-i18n="dt_base"></dt><dd><code>origin/main</code></dd>
+              <dt>PR</dt><dd>GitHub HTTPS push + REST API</dd>
+              <dt data-i18n="dt_deploy"></dt><dd>Jenkins <code>01-air8-refactoring(github)</code> / <code>main</code></dd>
+            </dl>
+          </article>
+          <article class="panel">
+            <h3 data-i18n="mod_new_h3"></h3>
+            <ul class="tight">
+              <li data-i18n-html="mod_new_1"></li>
+              <li data-i18n="mod_new_2"></li>
+              <li data-i18n="mod_new_3"></li>
+              <li data-i18n="mod_new_4"></li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="gates">
+        <h2 data-i18n="gate_h2"></h2>
+        <p class="note" data-i18n="gate_note"></p>
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th data-i18n="gate_col_manual"></th>
+              <th data-i18n="gate_col_auto"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th data-i18n="g_how"></th><td data-i18n="g_how_m"></td><td data-i18n="g_how_a"></td></tr>
+            <tr><th data-i18n="g_intake"></th><td data-i18n="g_intake_m"></td><td data-i18n="g_intake_a"></td></tr>
+            <tr><th data-i18n="g_1"></th><td data-i18n="g_1_m"></td><td data-i18n="g_1_a"></td></tr>
+            <tr><th data-i18n="g_2"></th><td data-i18n="g_2_m"></td><td data-i18n="g_2_a"></td></tr>
+            <tr><th data-i18n="g_3"></th><td data-i18n="g_3_m"></td><td data-i18n="g_3_a"></td></tr>
+            <tr><th data-i18n="g_4"></th><td data-i18n="g_4_m"></td><td data-i18n="g_4_a"></td></tr>
+            <tr><th data-i18n="g_ship"></th><td class="no" data-i18n="g_ship_m"></td><td class="no" data-i18n="g_ship_a"></td></tr>
+            <tr><th data-i18n="g_gap"></th><td data-i18n="g_gap_m"></td><td data-i18n="g_gap_a"></td></tr>
+          </tbody>
+        </table>
+        <p class="note" style="margin-top:14px" data-i18n="gate_txn"></p>
+      </section>
+
+      <section id="parallel">
+        <h2 data-i18n="par_h2"></h2>
+        <p class="note" data-i18n="par_note"></p>
+        <h3 style="margin-top:8px" data-i18n="par_iso"></h3>
+        <div class="trees" style="margin:12px 0 22px">
+          <div class="tree-root"><span data-i18n="par_root"></span><small><code>C:/aiproject/.worktrees</code></small></div>
+          <div class="tree">A8-19<small data-i18n-html="par_a19"></small></div>
+          <div class="tree">A8-67<small data-i18n-html="par_a67"></small></div>
+          <div class="tree">Refactoring<small data-i18n-html="par_ref"></small></div>
+        </div>
+        <div class="cols-2">
+          <article class="panel">
+            <h3 data-i18n="par_what_h"></h3>
+            <ul class="tight">
+              <li data-i18n="par_w1"></li>
+              <li data-i18n="par_w2"></li>
+              <li data-i18n="par_w3"></li>
+              <li data-i18n="par_w4"></li>
+              <li data-i18n="par_w5"></li>
+            </ul>
+          </article>
+          <article class="panel">
+            <h3 data-i18n="par_id_h"></h3>
+            <p data-i18n="par_id_p"></p>
+            <ul class="tight">
+              <li data-i18n-html="par_id1"></li>
+              <li data-i18n-html="par_id2"></li>
+              <li data-i18n-html="par_id3"></li>
+              <li data-i18n-html="par_id4"></li>
+              <li data-i18n-html="par_id5"></li>
+              <li data-i18n-html="par_id6"></li>
+            </ul>
+          </article>
+        </div>
+        <div class="id-grid" style="margin-top:16px">
+          <div class="panel id-card"><h3 data-i18n="id_rule_h"></h3><p data-i18n-html="id_rule"></p></div>
+          <div class="panel id-card"><h3 data-i18n="id_ac_h"></h3><p data-i18n-html="id_ac"></p></div>
+          <div class="panel id-card"><h3 data-i18n="id_task_h"></h3><p data-i18n-html="id_task"></p></div>
+          <div class="panel id-card"><h3 data-i18n="id_br_h"></h3><p data-i18n-html="id_br"></p></div>
+        </div>
+        <h3 style="margin:22px 0 8px" data-i18n="loop_h"></h3>
+        <div class="loop">
+          <div><b data-i18n="loop_1t"></b><span data-i18n="loop_1"></span></div>
+          <div><b data-i18n="loop_2t"></b><span data-i18n="loop_2"></span></div>
+          <div><b data-i18n="loop_3t"></b><span data-i18n="loop_3"></span></div>
+          <div><b data-i18n="loop_4t"></b><span data-i18n="loop_4"></span></div>
+          <div><b data-i18n="loop_5t"></b><span data-i18n="loop_5"></span></div>
+        </div>
+      </section>
+
+      <section id="authority">
+        <h2 data-i18n="auth_h2"></h2>
+        <p class="note" data-i18n="auth_note"></p>
+        <div class="authority">
+          <article>
+            <h3 data-i18n="auth_sys_h"></h3>
+            <ul class="tight">
+              <li data-i18n="auth_s1"></li>
+              <li data-i18n="auth_s2"></li>
+              <li data-i18n="auth_s3"></li>
+              <li data-i18n="auth_s4"></li>
+              <li data-i18n="auth_s5"></li>
+              <li data-i18n="auth_s6"></li>
+              <li data-i18n="auth_s7"></li>
+            </ul>
+          </article>
+          <article>
+            <h3 data-i18n="auth_hum_h"></h3>
+            <ul class="tight">
+              <li data-i18n="auth_h1"></li>
+              <li data-i18n="auth_h2i"></li>
+              <li data-i18n="auth_h3"></li>
+              <li data-i18n="auth_h4"></li>
+              <li data-i18n="auth_h5"></li>
+              <li data-i18n="auth_h6"></li>
+            </ul>
+          </article>
+        </div>
+        <div class="cols-2" style="margin-top:16px">
+          <article class="panel">
+            <h3 data-i18n="auth_child_h"></h3>
+            <ul class="tight">
+              <li>Requirement Validation</li>
+              <li>Requirement Confirmation</li>
+              <li>Prototype Confirmation</li>
+              <li>Task Breakdown</li>
+              <li>Test Cases</li>
+              <li data-i18n="auth_exec"></li>
+            </ul>
+          </article>
+          <article class="panel">
+            <h3 data-i18n="auth_role_h"></h3>
+            <ul class="tight">
+              <li data-i18n="auth_r1"></li>
+              <li data-i18n="auth_r2"></li>
+              <li data-i18n="auth_r3"></li>
+              <li data-i18n="auth_r4"></li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="measure">
+        <h2 data-i18n="ms_h2"></h2>
+        <div class="metrics">
+          <article><strong data-i18n="ms_1t"></strong><span data-i18n-html="ms_1"></span></article>
+          <article><strong data-i18n="ms_2t"></strong><span data-i18n="ms_2"></span></article>
+          <article><strong data-i18n="ms_3t"></strong><span data-i18n="ms_3"></span></article>
+        </div>
+      </section>
+
+      <section id="next">
+        <h2 data-i18n="nx_h2"></h2>
+        <p class="note" data-i18n="nx_note"></p>
+        <div class="next-list">
+          <article><div class="rank">01</div><div><strong data-i18n="nx_1t"></strong><p data-i18n="nx_1"></p></div></article>
+          <article><div class="rank">02</div><div><strong data-i18n="nx_2t"></strong><p data-i18n="nx_2"></p></div></article>
+          <article><div class="rank">03</div><div><strong data-i18n="nx_3t"></strong><p data-i18n="nx_3"></p></div></article>
+          <article><div class="rank">04</div><div><strong data-i18n="nx_4t"></strong><p data-i18n="nx_4"></p></div></article>
+          <article><div class="rank">05</div><div><strong data-i18n="nx_5t"></strong><p data-i18n="nx_5"></p></div></article>
+        </div>
+      </section>
+
+      <footer data-i18n-html="footer"></footer>
+    </main>
+  </div>
+  <script>
+    const I18N = {
+      zh: {
+        doc_title: "Air8 DevOps 交付控制简报",
+        nav_aria: "简报目录",
+        lang_aria: "语言",
+        nav_sub: "DevOps 交付控制简报<br />给管理层的一页说明",
+        nav_why: "为什么这样设计",
+        nav_flow: "端到端流程",
+        nav_modules: "多项目配置",
+        nav_gates: "人工 / 自动门控",
+        nav_parallel: "并行、worktree、编号",
+        nav_authority: "权限边界",
+        nav_measure: "怎么衡量成败",
+        nav_next: "下一步优化",
+        h1: "一条需求，从校验走到发布，全程可回放。",
+        lede: "主编排器按配置驱动四个专职角色。人决定业务对不对、能不能发；AI 负责把材料补齐、证据写清、中断后接着干。",
+        mode_aria: "交付模式",
+        mode_manual: "人工门控",
+        mode_auto: "自动门控",
+        hint_manual: "默认 Manual。Auto-Gated 必须在主 issue 开单时写明。",
+        hint_auto: "Auto-Gated 是开单时的事前授权，不是另一次领导点击。",
+        why_h2: "先看三件管理层真正关心的事",
+        why_note: "状态跳转次数、评论数量、任务条数都不是成绩。流程只服务下面三件事。",
+        why_1_t: "开发前把需求钉死",
+        why_1: "四要素加十项材料检查，缺材料就停。验收编号一旦批准，下游不得私自改业务含义。",
+        why_2_t: "中断后能接着干",
+        why_2: "每个阶段产物、任务台账、门控证据都回读落账。重跑从已验证步骤继续，不重做已完成工作。",
+        why_3_t: "最终用户能走完流程",
+        why_3: "每个任务过关不够。全部任务完成后还要做端到端业务验收和架构复核，再进入 PR。",
+        flow_h2: "端到端流程（已简化）",
+        flow_note: "点击站点看该阶段做什么。真实 Linear 状态更多，汇报只保留决策点。",
+        flow_aria: "交付站点",
+        out_k: "这一站产出",
+        check_k: "过站条件",
+        how_manual: "人工门控怎么走",
+        how_auto: "自动门控怎么走",
+        banner_manual: "当前演示：Manual。Agent 只把产物放到审核态。必须等人把子 issue 标 Done，并给出明确下一步，主 issue 才进入下一执行态。",
+        banner_auto: "当前演示：Auto-Gated。主编排器在证据和审计评论都回读成功后，写子 issue 完成态，并把主 issue 推到 Start … 触发态，由 webhook 拉起下一阶段。",
+        mod_h2: "多个项目如何支持和配置",
+        mod_note: "配置只认 <code>.codex/linear/workflow.toml</code>。开单时写 <b>Module Name</b> 和 <b>Delivery Mode</b>。未知模块直接拒绝，禁止猜仓库。",
+        mod_portal_note: "默认模块。门户功能走这条线。",
+        mod_ref_note: "独立仓库。Gate 4 的 PR 和合并后部署都有固定路线。",
+        dt_repo: "仓库",
+        dt_base: "基线",
+        dt_deploy: "部署",
+        mod_portal_deploy: "不由本环自动部署",
+        mod_new_h3: "加新项目怎么做",
+        mod_new_1: "在 <code>[modules.*]</code> 增加显示名、仓库路径、基线分支、PR 提供方。",
+        mod_new_2: "需要部署再写 Jenkins 项目名和固定分支。",
+        mod_new_3: "运行时不得改模块。worktree 一旦建好，换项目必须新开一次交付。",
+        mod_new_4: "原型发布走独立 GitHub Pages 库，不含业务代码和敏感数据。",
+        gate_h2: "人工门控和自动门控",
+        gate_note: "Auto-Gated 不是无人值守。它是开单时的事前授权：只允许主编排器在证据齐、审计评论已回读后，完成 Gate 1–3，并在 Gate 4 建好 PR。合并、发布、部署永远是人。",
+        gate_col_manual: "人工门控 Manual（默认）",
+        gate_col_auto: "自动门控 Auto-Gated",
+        g_how: "如何生效", g_how_m: "不写或写 Manual", g_how_a: "主 issue 开单时明确写 Auto-Gated",
+        g_intake: "材料校验通过", g_intake_m: "人把子 issue 标 Done，再给“下一步”", g_intake_a: "证据齐后写 AUTO_APPROVED，子 issue 完成，主 issue 进入 Start 触发态",
+        g_1: "Gate 1 需求基线", g_1_m: "人批准当前修订", g_1_a: "基线完整、输出可复算、无冲突后自动过闸",
+        g_2: "Gate 2 原型", g_2_m: "人确认原型与批准基线一致", g_2_a: "公开 URL、可追溯、无新业务含义后自动过闸",
+        g_3: "Gate 3 设计 / 任务 / 用例", g_3_m: "人审三份产物", g_3_a: "三份齐、可追溯、无设计/测试阻塞后自动过闸",
+        g_4: "Gate 4 PR", g_4_m: "等人授权再建 PR", g_4_a: "端到端验收 + 架构复核通过后自动建 PR，并通知 DEV",
+        g_ship: "合并 / 发布 / 部署", g_ship_m: "人", g_ship_a: "仍是人。自动门控到此为止",
+        g_gap: "缺口、冲突、环境故障", g_gap_m: "停，等人处理", g_gap_a: "回落 Manual，保留现场，不再空转重试",
+        gate_txn: "自动过闸必须走完整事务：结果通知回读 → AUTO_APPROVED 审计回读 → 子 issue 完成回读 → 下一触发态回读 → 主/子再对一次。缺一步就是流程阻塞，不能报成功。",
+        par_h2: "并行、工作目录和编号",
+        par_note: "多需求可以同时跑，因为每条交付独占分支和 worktree。同一条需求里，开发任务默认串行，避免互相污染。",
+        par_iso: "隔离目录",
+        par_root: "公共父目录",
+        par_a19: "模块：Supplier Portal<br />分支：<code>feature/A8-19-overdue-insights</code><br />只在这个目录改代码和规格",
+        par_a67: "模块：Supplier Portal<br />另一条分支、另一棵树<br />互不影响",
+        par_ref: "模块锁到 <code>air8-refactoring</code><br />PR 走 GitHub，不混用门户仓库",
+        par_what_h: "什么并行，什么不并行",
+        par_w1: "多条 MRB：并行。每条一个主 issue、一条 feature 分支、一棵 worktree。",
+        par_w2: "Gate 3：设计任务清单和测试用例可以同时准备，但作为同一闸口一起批准。",
+        par_w3: "同一需求的 TASK：默认一个接一个。人明确授权后，才允许在隔离 worktree 里并行实现。",
+        par_w4: "四个角色互不调用、互不批准。只有主编排器派活和收证据。",
+        par_w5: "模块一旦锁定，本条交付不能中途换仓库。",
+        par_id_h: "编号是追踪链，不是工单爆炸",
+        par_id_p: "一个主 issue 只挂六个阶段子 issue。任务和用例写在子 issue 里，不给每个 TASK 再开一张票。",
+        par_id1: "<code>R-xxx</code> 业务规则，产品确认阶段发出",
+        par_id2: "<code>AC-xxx</code> 验收标准，后续设计和测试必须引用",
+        par_id3: "<code>EX-N / EX-E / EX-EMPTY</code> 正例、例外、空态",
+        par_id4: "<code>TASK-xxx</code> 可独立验证的行为，不是按文件切",
+        par_id5: "<code>TC-xxx</code> 手工端到端场景",
+        par_id6: "<code>GAP-*</code> 人明确接受的材料缺口",
+        id_rule_h: "规则", id_rule: "<code>R-012</code> 只由产品编号。架构和开发不得改号、不得发明新业务含义。",
+        id_ac_h: "验收", id_ac: "<code>AC-003</code> 必须能独立复算出唯一结果。对不上就不是设计问题，是需求缺口。",
+        id_task_h: "任务台账", id_task: "<code>TASK-007</code> 在 Development Execution 里一行记录：开发中 / 测试中 / 通过 / 修复 1–3。",
+        id_br_h: "分支名", id_br: "<code>feature/{issue}-{slug}</code>。阶段子 issue 用主 issue 内部 UUID 做隐藏标记，避免重名撞车。",
+        loop_h: "单个任务怎么转",
+        loop_1t: "1 开发", loop_1: "先写失败测试，再改行为。初次实现不算修复次数。",
+        loop_2t: "2 台账切测试", loop_2: "开发说可测后，必须回读改成 TESTING，才派测试。",
+        loop_3t: "3 独立验证", loop_3: "测试看批准的验收，不看开发自评。",
+        loop_4t: "4 分类分流", loop_4: "代码缺陷可修 3 次；需求/设计/用例/环境问题不消耗修复次数。",
+        loop_5t: "5 全部通过后", loop_5: "自动做功能验收和架构复核，再进 PR。",
+        auth_h2: "人和系统各自拍板什么",
+        auth_note: "角色通知只 @BA_TEAM / @DEV_TEAM / @QA_TEAM，不点个人账号。评论分三类：只记录、只通知、必须行动。",
+        auth_sys_h: "系统可以自动做",
+        auth_s1: "建隔离分支和 worktree",
+        auth_s2: "写六个阶段子 issue 和台账",
+        auth_s3: "按材料完整性提问、汇总证据",
+        auth_s4: "发布无敏感数据的原型到 Pages",
+        auth_s5: "Auto-Gated 下完成 Gate 1–3 并回写审计",
+        auth_s6: "任务全过后做验收和架构复核",
+        auth_s7: "Auto-Gated 下创建并核对 PR，通知 DEV 审核",
+        auth_hum_h: "必须人决定",
+        auth_h1: "缺材料时补什么、标不适用、或接受缺口",
+        auth_h2i: "业务规则、验收含义、冲突怎么选",
+        auth_h3: "Manual 模式下每个 Gate 的批准",
+        auth_h4: "PR 合并、发布、部署、UAT 写入",
+        auth_h5: "第三次代码修复仍失败后怎么走",
+        auth_h6: "换模块、开并行实现、重置失败任务",
+        auth_child_h: "六个聚合子 issue",
+        auth_exec: "Development Execution（任务台账）",
+        auth_role_h: "四个角色，一个编排器",
+        auth_r1: "product：需求校验、业务视图、开发视图、原型",
+        auth_r2: "architect：技术方案、任务拆分、最终架构复核",
+        auth_r3: "tester：用例设计、逐任务验证、功能验收",
+        auth_r4: "developer：一次只做一个已批准任务",
+        ms_h2: "汇报时建议强调的边界",
+        ms_1t: "配置即法律",
+        ms_1: "阶段名、角色、模块、门控条件都在 <code>workflow.toml</code>。Agent 不准把人名、仓库、Jenkins 任务写死在自己的提示词里。",
+        ms_2t: "写成功不等于完成",
+        ms_2: "Linear、Git、Jenkins 都必须回读。主 issue 处于“分析中”只说明阶段开始了，不证明产物已经在。",
+        ms_3t: "失败可见，不空转",
+        ms_3: "代码最多修三次。缺口、冲突、环境故障停下来等人。自动门控遇到这些问题会降回人工。",
+        nx_h2: "对照业界后，先补这五件",
+        nx_note: "角色拆分、人工/自动门控、回读和隔离 worktree 已经对齐 2026 年主流做法。下面五项补的是规格可执行、真实用户缺口、经营指标、安全和并行纪律。",
+        nx_1t: "让验收标准能被机器核对",
+        nx_1: "每个 AC-xxx 挂上对应单测或 E2E 名称。Gate 4 前用 CI 检查：有验收没测试、有测试没验收、任务标完成却没有命令退出码，都不放行。不要只靠 agent 对照 Markdown。",
+        nx_2t: "任务全过后，再审一次产品意图",
+        nx_2: "逐任务通过只证明代码符合当前规格。补一层产品审计：真实用户会断在哪、相邻模块有没有漏改、规格里写“不要动”的地方现在是否已经错了。允许打回 Gate 1。",
+        nx_3t: "按主 issue 记账，不看评论数",
+        nx_3: "记录 token、耗时、返工闸口和修复次数。领导看三个数：规格一次通过率、平均修复次数、端到端验收一次通过率。规格越糊，幻觉成本会指数上升。",
+        nx_4t: "安全单独成闸，不塞进架构复核",
+        nx_4: "合成速度会放大权限和数据漏洞。高风险任务在进 PR 前固定跑密钥扫描、依赖漏洞和权限/数据边界检查，并给出独立结论。",
+        nx_5t: "真要并行，先锁文件所有权",
+        nx_5: "默认串行继续保留。一旦授权并行：一个文件一个写者，共享契约只读，按接口层再到消费层合并，每合一次重跑门控。本地同时写的 agent 建议不超过 3–5 个。",
+        footer: "依据 <code>.codex/linear/workflow.toml</code>、<code>.agents/skills/devops-loop</code> 与治理规范整理，并对照 2026 年 Spec-Driven Agentic Development 实践。已省略部分状态名和评论标记。本页用于内部汇报，不替代配置原文。"
+      },
+      en: {
+        doc_title: "Air8 DevOps Delivery Control Briefing",
+        nav_aria: "Briefing sections",
+        lang_aria: "Language",
+        nav_sub: "DevOps delivery control<br />One-page briefing for leadership",
+        nav_why: "Why this design",
+        nav_flow: "End-to-end flow",
+        nav_modules: "Multi-project setup",
+        nav_gates: "Manual / auto gates",
+        nav_parallel: "Parallel work, worktrees, IDs",
+        nav_authority: "Authority boundary",
+        nav_measure: "How we measure success",
+        nav_next: "What to improve next",
+        h1: "One requirement, from intake to release, fully replayable.",
+        lede: "A primary orchestrator drives four specialists from config. People decide whether the business is right and whether it can ship. AI gathers materials, records evidence, and resumes after interruption.",
+        mode_aria: "Delivery mode",
+        mode_manual: "Manual",
+        mode_auto: "Auto-Gated",
+        hint_manual: "Manual is the default. Auto-Gated must be written on the main issue at intake.",
+        hint_auto: "Auto-Gated is standing authorization at intake, not another executive click.",
+        why_h2: "Three outcomes leadership actually cares about",
+        why_note: "State hops, comment volume, and task count are not success. The loop only serves these three outcomes.",
+        why_1_t: "Lock the requirement before code",
+        why_1: "Four-element plus ten material checks. Missing material stops the work. Once an acceptance ID is approved, downstream agents cannot rewrite business meaning.",
+        why_2_t: "Resume after interruption",
+        why_2: "Every phase artifact, task ledger, and gate proof is read back into the record. A rerun continues from verified steps instead of replaying finished work.",
+        why_3_t: "The end user can complete the flow",
+        why_3: "Passing each task is not enough. After all tasks pass, run end-to-end business acceptance and architecture review, then enter the PR.",
+        flow_h2: "End-to-end flow, simplified",
+        flow_note: "Click a station to see what that phase does. Linear has more states; this briefing keeps the decision points.",
+        flow_aria: "Delivery stations",
+        out_k: "What this station produces",
+        check_k: "Pass condition",
+        how_manual: "How Manual proceeds",
+        how_auto: "How Auto-Gated proceeds",
+        banner_manual: "Showing Manual. Agents only place deliverables in review. A human must mark the child Done and give an explicit next step before the main issue enters the next active state.",
+        banner_auto: "Showing Auto-Gated. After evidence and the audit comment are read back, the primary completes the child and moves the main issue to a Start … trigger state so the webhook launches the next phase.",
+        mod_h2: "How multiple projects are supported",
+        mod_note: "Config is only <code>.codex/linear/workflow.toml</code>. Write <b>Module Name</b> and <b>Delivery Mode</b> at intake. Unknown modules are rejected. Never guess a repository.",
+        mod_portal_note: "Default module. Portal features take this path.",
+        mod_ref_note: "Separate repository. Gate 4 PR and post-merge deploy follow a fixed route.",
+        dt_repo: "Repo",
+        dt_base: "Base",
+        dt_deploy: "Deploy",
+        mod_portal_deploy: "Not auto-deployed by this loop",
+        mod_new_h3: "Adding a project",
+        mod_new_1: "Add display name, repository path, base branch, and PR provider under <code>[modules.*]</code>.",
+        mod_new_2: "If deploy is needed, also set the Jenkins project name and fixed branch.",
+        mod_new_3: "Do not change the module at runtime. After the worktree exists, a module change requires a new delivery.",
+        mod_new_4: "Prototypes publish to a separate GitHub Pages repo with no application code or sensitive data.",
+        gate_h2: "Manual gates and Auto-Gated",
+        gate_note: "Auto-Gated is not unattended delivery. It is standing authorization at intake: the primary may complete Gates 1–3 and create a PR after evidence and audit comments are read back. Merge, release, and deploy stay human.",
+        gate_col_manual: "Manual (default)",
+        gate_col_auto: "Auto-Gated",
+        g_how: "How it takes effect", g_how_m: "Blank or Manual", g_how_a: "Main issue says Auto-Gated at intake",
+        g_intake: "Material check ready", g_intake_m: "Human marks the child Done, then says next step", g_intake_a: "Write AUTO_APPROVED, complete the child, move the main issue to a Start trigger",
+        g_1: "Gate 1 requirement baseline", g_1_m: "Human approves the current revision", g_1_a: "Complete baseline, recalculable outputs, no conflict",
+        g_2: "Gate 2 prototype", g_2_m: "Human confirms prototype matches the approved baseline", g_2_a: "Public URL verified, traceable, no new business meaning",
+        g_3: "Gate 3 design / tasks / cases", g_3_m: "Human reviews all three artifacts", g_3_a: "All three ready and traceable, no design or test blocker",
+        g_4: "Gate 4 PR", g_4_m: "Wait for authorization, then create the PR", g_4_a: "After FEATURE_PASS + FINAL_PASS, create the PR and notify DEV",
+        g_ship: "Merge / release / deploy", g_ship_m: "Human", g_ship_a: "Still human. Auto-Gated stops here",
+        g_gap: "Gap, conflict, environment failure", g_gap_m: "Stop and wait", g_gap_a: "Fall back to Manual, keep the scene, do not idle-retry",
+        gate_txn: "Auto completion is one transaction: result notification readback → AUTO_APPROVED audit readback → child completion readback → next trigger readback → final main/child pair readback. A missing step is a workflow block, not success.",
+        par_h2: "Parallel work, worktrees, and IDs",
+        par_note: "Multiple requirements can run at once because each delivery owns a branch and worktree. Inside one requirement, development tasks stay sequential by default so they do not contaminate each other.",
+        par_iso: "Isolated directories",
+        par_root: "Shared parent",
+        par_a19: "Module: Supplier Portal<br />Branch: <code>feature/A8-19-overdue-insights</code><br />Code and specs change only here",
+        par_a67: "Module: Supplier Portal<br />A different branch and tree<br />No interference",
+        par_ref: "Module locked to <code>air8-refactoring</code><br />PR uses GitHub, not the portal repo",
+        par_what_h: "What is parallel, what is not",
+        par_w1: "Multiple MRBs: parallel. Each has one main issue, one feature branch, one worktree.",
+        par_w2: "Gate 3: task list and test cases may be prepared together, but they are approved as one gate.",
+        par_w3: "TASK items in one requirement: sequential by default. Parallel implementation needs explicit human authorization and isolated worktrees.",
+        par_w4: "The four roles never call or approve one another. Only the primary dispatches work and collects evidence.",
+        par_w5: "Once the module is locked, this delivery cannot switch repositories.",
+        par_id_h: "IDs are a trace chain, not ticket explosion",
+        par_id_p: "One main issue has six phase children. Tasks and cases live inside those children. Do not open a Linear issue per TASK.",
+        par_id1: "<code>R-xxx</code> business rules, issued in requirement confirmation",
+        par_id2: "<code>AC-xxx</code> acceptance criteria that design and tests must cite",
+        par_id3: "<code>EX-N / EX-E / EX-EMPTY</code> normal, exception, and empty examples",
+        par_id4: "<code>TASK-xxx</code> independently verifiable behavior, not a file split",
+        par_id5: "<code>TC-xxx</code> manual end-to-end scenarios",
+        par_id6: "<code>GAP-*</code> material gaps a human explicitly accepted",
+        id_rule_h: "Rules", id_rule: "<code>R-012</code> is numbered by product. Architecture and development cannot renumber it or invent business meaning.",
+        id_ac_h: "Acceptance", id_ac: "<code>AC-003</code> must recalculate to one observable result. A mismatch is a requirement gap, not a design tweak.",
+        id_task_h: "Task ledger", id_task: "<code>TASK-007</code> is one row in Development Execution: developing / testing / done / repair 1–3.",
+        id_br_h: "Branch name", id_br: "<code>feature/{issue}-{slug}</code>. Phase children use the main issue internal UUID as a hidden marker so names cannot collide.",
+        loop_h: "How one task turns",
+        loop_1t: "1 Implement", loop_1: "Write a failing test first, then change behavior. The first implementation is not a repair.",
+        loop_2t: "2 Ledger to testing", loop_2: "After READY_FOR_TEST, read back TESTING on the row before dispatching tester.",
+        loop_3t: "3 Independent verify", loop_3: "Tester checks approved acceptance, not the developer’s self-score.",
+        loop_4t: "4 Route by class", loop_4: "Code defects get 3 repairs. Requirement, design, test, and environment issues do not consume that budget.",
+        loop_5t: "5 After all pass", loop_5: "Automatically run feature acceptance and architecture review, then enter the PR.",
+        auth_h2: "What people decide vs what the system may do",
+        auth_note: "Role notices mention only @BA_TEAM / @DEV_TEAM / @QA_TEAM, never personal accounts. Comments are record-only, notification-only, or action-required.",
+        auth_sys_h: "The system may do automatically",
+        auth_s1: "Create the isolated branch and worktree",
+        auth_s2: "Write the six phase children and the task ledger",
+        auth_s3: "Ask completeness questions and record evidence",
+        auth_s4: "Publish a non-sensitive prototype to Pages",
+        auth_s5: "Complete Gates 1–3 under Auto-Gated and write the audit",
+        auth_s6: "Run feature acceptance and architecture review after all tasks pass",
+        auth_s7: "Create and verify a PR under Auto-Gated, then notify DEV",
+        auth_hum_h: "Humans must decide",
+        auth_h1: "What to supply, mark not applicable, or accept as a gap",
+        auth_h2i: "Business rules, acceptance meaning, and conflict choices",
+        auth_h3: "Every gate approval in Manual mode",
+        auth_h4: "PR merge, release, deploy, and UAT writes",
+        auth_h5: "What to do after the third code repair still fails",
+        auth_h6: "Switching modules, authorizing parallel implementation, resetting a failed task",
+        auth_child_h: "Six aggregated child issues",
+        auth_exec: "Development Execution (task ledger)",
+        auth_role_h: "Four roles, one orchestrator",
+        auth_r1: "product: validation, business view, development view, prototype",
+        auth_r2: "architect: technical design, task breakdown, final architecture review",
+        auth_r3: "tester: test design, per-task verification, feature acceptance",
+        auth_r4: "developer: one approved task at a time",
+        ms_h2: "Boundaries worth stressing in the briefing",
+        ms_1t: "Config is the law",
+        ms_1: "Phase names, roles, modules, and gate predicates live in <code>workflow.toml</code>. Agents must not hard-code people, repos, or Jenkins jobs in their own prompts.",
+        ms_2t: "A write is not completion",
+        ms_2: "Linear, Git, and Jenkins must be read back. A main issue sitting in Analyzing only means the phase started, not that the artifact exists.",
+        ms_3t: "Failure stays visible",
+        ms_3: "Code gets at most three repairs. Gaps, conflicts, and environment failures stop and wait. Auto-Gated falls back to Manual when those appear.",
+        nx_h2: "After looking at peers, add these five first",
+        nx_note: "Role split, human/auto gates, readback, and isolated worktrees already match 2026 practice. These five close executable specs, real-user gaps, operating metrics, security, and parallel discipline.",
+        nx_1t: "Make acceptance machine-checkable",
+        nx_1: "Bind each AC-xxx to a unit or E2E name. Before Gate 4, CI should reject an acceptance with no test, a test with no acceptance, or a Done row with no command exit code. Do not rely on an agent reading Markdown.",
+        nx_2t: "Audit product intent after all tasks pass",
+        nx_2: "Per-task pass only proves code matches the current spec. Add a product audit: where a real user would break, which adjacent modules were missed, and whether a “do not touch” note is now wrong. Allow a return to Gate 1.",
+        nx_3t: "Account per main issue, not by comment count",
+        nx_3: "Record tokens, elapsed time, return gates, and repair count. Leadership should watch first-pass spec rate, average repairs, and first-pass end-to-end acceptance. Vague specs raise hallucination cost exponentially.",
+        nx_4t: "Give security its own gate",
+        nx_4: "Synthesis speed amplifies permission and data defects. Before a PR, high-risk tasks must run secret scanning, dependency checks, and permission/data-boundary review with a separate verdict.",
+        nx_5t: "If you parallelize, lock file ownership first",
+        nx_5: "Keep sequential as the default. When parallel is authorized: one writer per file, shared contracts read-only, merge interface then consumers, and rerun gates after each merge. Keep concurrent writers around 3–5.",
+        footer: "Prepared from <code>.codex/linear/workflow.toml</code>, <code>.agents/skills/devops-loop</code>, the governance spec, and 2026 Spec-Driven Agentic Development practice. Some state names and comment markers are omitted. This page is an internal briefing, not a substitute for the config."
+      }
+    };
+
+    const PHASES = {
+      zh: [
+        { id: "intake", idx: "00", name: "开单锁定", tag: "交付上下文", who: "主编排器", out: "模块、模式、feature 分支、隔离 worktree 写入主 issue 和 PIPELINE_RUN.md。", check: "未知模块直接拒绝。worktree 建好后不能换项目。", manual: "人在主 issue 填写 Module Name 和 Delivery Mode。", auto: "模式必须在开单时写明 Auto-Gated，事后推荐不算授权。" },
+        { id: "validate", idx: "01", name: "需求校验", tag: "材料就绪检查", who: "product · BA", out: "Business View；四要素 + 十项完整性结果只写在评论里。", check: "缺 P0/P1 材料、歧义或冲突则停，等人补或明确接受缺口。", manual: "人把 Requirement Validation 标 Done，再指令进入下一阶段。", auto: "材料齐且无冲突后自动完成，主 issue 进入 Start Related KB Analyze。" },
+        { id: "confirm", idx: "02", name: "需求确认", tag: "Gate 1", who: "product · BA", out: "Development View：R / AC / 正反空例。这是后面所有人引用的基线。", check: "范围内功能都有验收；关键输出可独立复算；冲突必须先关掉。", manual: "人批准当前修订。沉默或普通回复不等于批准。", auto: "基线完整后写 AUTO_APPROVED，触发 Start Prototype Analyze。" },
+        { id: "proto", idx: "03", name: "原型确认", tag: "Gate 2", who: "product · BA · DEV", out: "spec.md、用户流、可公开的 HTML 原型。编号沿用 Gate 1。", check: "原型不得发明新业务规则。发现新含义必须退回 Gate 1。", manual: "人确认原型与基线一致后，指令进入设计。", auto: "公开 URL 已核、可追溯、无新含义后触发 Start Dev Analyze。" },
+        { id: "plan", idx: "04", name: "方案与测试", tag: "Gate 3", who: "architect · tester · DEV · QA", out: "技术方案、TASK 清单、手工 TC。三份作为一闸批准。", check: "每个 TASK 必须挂已有 AC。测试设计不另等一闸。", manual: "人审设计、任务和用例。", auto: "三份齐且可追溯后触发 Start Develop，并建立开发台账。" },
+        { id: "build", idx: "05", name: "逐任务开发", tag: "开发循环", who: "developer · tester", out: "一个行为一个循环：实现 → 台账切测试 → 独立验证。", check: "代码缺陷最多再修 3 次。需求/设计缺口要退回对应角色。", manual: "任务全过、功能验收和架构复核通过后等人授权建 PR。", auto: "同样必须 FEATURE_PASS + FINAL_PASS，然后自动建 PR。" },
+        { id: "release", idx: "06", name: "PR 与发布", tag: "Gate 4", who: "DEV · 人工", out: "已核对的 PR。Refactoring 合并后可走固定 Jenkins 任务。", check: "自动门控可以建 PR 和催审，不能合并、不能发布、不能部署。", manual: "人授权建 PR，再授权合并/发布。", auto: "自动建 PR 并 @DEV_TEAM。合并和部署仍要人点头。" }
+      ],
+      en: [
+        { id: "intake", idx: "00", name: "Lock intake", tag: "Delivery context", who: "Primary", out: "Module, mode, feature branch, and isolated worktree are recorded on the main issue and in PIPELINE_RUN.md.", check: "Unknown modules are rejected. After the worktree exists, the module cannot change.", manual: "A human writes Module Name and Delivery Mode on the main issue.", auto: "Auto-Gated must be written at intake. A later recommendation is not authorization." },
+        { id: "validate", idx: "01", name: "Requirement check", tag: "Material readiness", who: "product · BA", out: "Business View. Four-element and ten completeness results stay in comments.", check: "Stop on missing P0/P1 material, ambiguity, or conflict until a human supplies it or accepts the gap.", manual: "A human marks Requirement Validation Done, then instructs the next phase.", auto: "When material is complete and conflict-free, complete the child and enter Start Related KB Analyze." },
+        { id: "confirm", idx: "02", name: "Requirement confirm", tag: "Gate 1", who: "product · BA", out: "Development View with R / AC / worked examples. This is the baseline everyone else cites.", check: "In-scope features have acceptance. Key outputs are uniquely recalculable. Conflicts must be closed first.", manual: "A human approves the current revision. Silence or an ordinary reply is not approval.", auto: "When the baseline is complete, write AUTO_APPROVED and trigger Start Prototype Analyze." },
+        { id: "proto", idx: "03", name: "Prototype confirm", tag: "Gate 2", who: "product · BA · DEV", out: "spec.md, user flow, and a public HTML prototype. IDs stay from Gate 1.", check: "The prototype must not invent business rules. New meaning returns to Gate 1.", manual: "A human confirms the prototype matches the baseline, then instructs design.", auto: "After a verified public URL, traceability, and no new meaning, trigger Start Dev Analyze." },
+        { id: "plan", idx: "04", name: "Design and tests", tag: "Gate 3", who: "architect · tester · DEV · QA", out: "Technical design, TASK list, and manual TCs. All three are one gate.", check: "Every TASK must cite an existing AC. Test design does not wait for a later gate.", manual: "A human reviews design, tasks, and cases.", auto: "When all three are ready and traceable, trigger Start Develop and create the execution ledger." },
+        { id: "build", idx: "05", name: "Task loop", tag: "Development", who: "developer · tester", out: "One behavior, one loop: implement → ledger to testing → independent verify.", check: "Code defects get at most 3 repairs. Requirement or design gaps return to the owning role.", manual: "After all tasks, feature acceptance, and architecture review pass, wait for authorization to create a PR.", auto: "The same FEATURE_PASS + FINAL_PASS is required, then the PR is created automatically." },
+        { id: "release", idx: "06", name: "PR and release", tag: "Gate 4", who: "DEV · human", out: "A verified PR. After a Refactoring merge, a fixed Jenkins job may deploy.", check: "Auto-Gated may create a PR and ask for review. It cannot merge, release, or deploy.", manual: "A human authorizes PR creation, then merge and release.", auto: "Create the PR and mention @DEV_TEAM. Merge and deploy still need a human." }
+      ]
+    };
+
+    const strip = document.getElementById("strip");
+    const detail = document.getElementById("detail");
+    const banner = document.getElementById("mode-banner");
+    const modeHint = document.getElementById("mode-hint");
+    let current = "intake";
+
+    function lang() {
+      return document.body.getAttribute("data-lang") === "en" ? "en" : "zh";
+    }
+    function mode() {
+      return document.body.getAttribute("data-mode");
+    }
+    function t(key) {
+      return I18N[lang()][key] || "";
+    }
+    function applyStatic() {
+      document.documentElement.lang = lang() === "en" ? "en" : "zh-CN";
+      document.title = t("doc_title");
+      document.querySelectorAll("[data-i18n]").forEach((el) => {
+        el.textContent = t(el.getAttribute("data-i18n"));
+      });
+      document.querySelectorAll("[data-i18n-html]").forEach((el) => {
+        el.innerHTML = t(el.getAttribute("data-i18n-html"));
+      });
+      document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+        el.setAttribute("aria-label", t(el.getAttribute("data-i18n-aria")));
+      });
+      document.querySelectorAll(".lang-zh").forEach((el) => el.setAttribute("aria-pressed", String(lang() === "zh")));
+      document.querySelectorAll(".lang-en").forEach((el) => el.setAttribute("aria-pressed", String(lang() === "en")));
+      modeHint.textContent = mode() === "auto" ? t("hint_auto") : t("hint_manual");
+      strip.setAttribute("aria-label", t("flow_aria"));
+    }
+    function renderStrip() {
+      const phases = PHASES[lang()];
+      strip.innerHTML = phases.map((p) => `
+        <button class="station" type="button" role="tab" id="tab-${p.id}" aria-pressed="${p.id === current}" data-id="${p.id}">
+          <span class="idx">${p.idx}</span>
+          <b>${p.name}</b>
+          <span class="tag">${p.tag}</span>
+          <span class="who">${p.who}</span>
+        </button>
+      `).join("");
+    }
+    function renderDetail() {
+      const p = PHASES[lang()].find((x) => x.id === current);
+      const gateText = mode() === "auto" ? p.auto : p.manual;
+      detail.innerHTML = `
+        <div><div class="k">${t("out_k")}</div><p>${p.out}</p></div>
+        <div><div class="k">${t("check_k")}</div><p>${p.check}</p></div>
+        <div><div class="k">${mode() === "auto" ? t("how_auto") : t("how_manual")}</div><p>${gateText}</p></div>
+      `;
+      banner.textContent = mode() === "auto" ? t("banner_auto") : t("banner_manual");
+    }
+    function setMode(next) {
+      document.body.setAttribute("data-mode", next);
+      document.getElementById("mode-manual").setAttribute("aria-pressed", String(next === "manual"));
+      document.getElementById("mode-auto").setAttribute("aria-pressed", String(next === "auto"));
+      modeHint.textContent = next === "auto" ? t("hint_auto") : t("hint_manual");
+      renderDetail();
+    }
+    function setLang(next) {
+      document.body.setAttribute("data-lang", next);
+      try { localStorage.setItem("air8-briefing-lang", next); } catch (e) {}
+      const url = new URL(location.href);
+      url.searchParams.set("lang", next);
+      history.replaceState(null, "", url);
+      applyStatic();
+      renderStrip();
+      renderDetail();
+    }
+
+    strip.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-id]");
+      if (!btn) return;
+      current = btn.getAttribute("data-id");
+      renderStrip();
+      renderDetail();
+    });
+    document.getElementById("mode-manual").addEventListener("click", () => setMode("manual"));
+    document.getElementById("mode-auto").addEventListener("click", () => setMode("auto"));
+    document.querySelectorAll(".lang-zh").forEach((el) => el.addEventListener("click", () => setLang("zh")));
+    document.querySelectorAll(".lang-en").forEach((el) => el.addEventListener("click", () => setLang("en")));
+
+    const params = new URLSearchParams(location.search);
+    let initial = params.get("lang") || "";
+    if (!initial) {
+      try { initial = localStorage.getItem("air8-briefing-lang") || ""; } catch (e) {}
+    }
+    if (initial !== "en" && initial !== "zh") initial = "zh";
+    document.body.setAttribute("data-lang", initial);
+    applyStatic();
+    renderStrip();
+    renderDetail();
+  </script>
+</body>
+</html>
