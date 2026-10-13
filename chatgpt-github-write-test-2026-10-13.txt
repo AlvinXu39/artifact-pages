@@ -1,0 +1,3 @@
+ChatGPT GitHub connector write test.
+Generated on 2026-10-13.
+If this file exists in the repository, GitHub write access is working.
