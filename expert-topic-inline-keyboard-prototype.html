@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AIR8 Expert Assistant · Telegram Topic Prototype</title>
+  <style>
+    :root {
+      --page: #f1f4f1;
+      --ink: #17211d;
+      --muted: #69746d;
+      --green: #8fb99a;
+      --green-deep: #5e986e;
+      --bot: #fff;
+      --expert: #d9f6d1;
+      --wallpaper: #a4cbaa;
+      --line: #d7e0d8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 15% 5%, #e2eee4 0, transparent 35%), var(--page);
+      color: var(--ink);
+      font: 14px/1.43 "Segoe UI", Arial, sans-serif;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .page { max-width: 1120px; margin: 0 auto; padding: 24px 18px 38px; }
+    h1 { margin: 0 0 5px; font-size: 23px; line-height: 1.25; }
+    .lead { margin: 0 0 18px; color: #5f6f64; }
+    .scenario-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .scenario-picker button {
+      border: 1px solid #c8d6cc; border-radius: 999px; background: #fff; color: #466753;
+      padding: 7px 14px; font-weight: 600;
+    }
+    .scenario-picker button.active { background: #347f4d; color: white; border-color: #347f4d; }
+    .layout { display: grid; grid-template-columns: minmax(320px, 480px) minmax(280px, 1fr); gap: 22px; align-items: start; }
+    .phone {
+      position: relative;
+      overflow: hidden; border: 1px solid #a8beae; border-radius: 17px;
+      background: var(--wallpaper); box-shadow: 0 16px 46px #193b2630;
+    }
+    .phone-status { height: 24px; padding: 3px 17px; display: flex; justify-content: space-between; color: #284733; background: #bdd8c1; font-size: 11px; font-weight: 700; }
+    .topic-header {
+      position: relative; z-index: 2; display: flex; align-items: center; gap: 9px;
+      min-height: 59px; padding: 7px 13px; background: #fff; border-radius: 0 0 18px 18px;
+      box-shadow: 0 1px 2px #2c5e3720;
+    }
+    .back { border: 0; background: transparent; color: #466e50; font-size: 23px; padding: 0 2px; }
+    .avatar { width: 33px; height: 33px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #e4b54e; color: #fff; font-weight: 700; }
+    .header-title { flex: 1; min-width: 0; }
+    .topic-switcher { display: flex; align-items: center; justify-content: space-between; gap: 6px; border: 0; background: transparent; padding: 0; color: inherit; text-align: left; }
+    .topic-switcher > span:first-child { min-width: 0; }
+    .topic-chevron { color: #6a796e; font-size: 13px; }
+    .topic-name { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 14px; font-weight: 700; }
+    .bot-name { display: block; color: #6f7971; font-size: 11px; }
+    .topic-menu { position: absolute; top: 77px; left: 12px; right: 12px; z-index: 5; padding: 5px; border-radius: 11px; background: #fff; box-shadow: 0 9px 30px #25432b40; }
+    .topic-menu[hidden] { display: none; }
+    .topic-menu button { display: block; width: 100%; padding: 9px 11px; border: 0; border-radius: 7px; background: transparent; color: #273b2d; text-align: left; }
+    .topic-menu button:hover, .topic-menu button:focus-visible { background: #eaf4eb; }
+    .header-icon { padding: 3px; color: #19271f; font-size: 19px; }
+    .conversation { position: relative; min-height: 575px; background: var(--wallpaper); }
+    .wallpaper { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .messages { position: relative; z-index: 1; padding: 14px 12px 18px; }
+    .date { width: max-content; margin: 0 auto 16px; padding: 3px 8px; border-radius: 9px; color: white; background: #739d78a8; font-size: 12px; font-weight: 700; }
+    .bubble {
+      width: fit-content; max-width: 93%; padding: 8px 10px 5px; border-radius: 11px;
+      background: var(--bot); box-shadow: 0 1px 1px #294b3020; margin-top: 8px;
+      white-space: pre-line; overflow-wrap: anywhere;
+    }
+    .bubble.bot { border-bottom-left-radius: 4px; }
+    .bubble.expert { margin-left: auto; background: var(--expert); border-bottom-right-radius: 4px; }
+    .bubble strong { font-weight: 700; }
+    .bubble .small { color: #52685a; font-size: 12px; }
+    .bubble a { color: #217452; text-decoration: none; font-weight: 600; }
+    .bubble a:hover { text-decoration: underline; }
+    .stamp { text-align: right; margin-top: 5px; color: #8a948d; font-size: 10px; }
+    .expert .stamp { color: #628b68; }
+    .message-unit { max-width: 96%; }
+    .message-unit.expert-unit { margin-left: auto; }
+    .message-unit .bubble { max-width: 100%; }
+    .inline-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px; margin-top: 3px; }
+    .inline-buttons button {
+      min-height: 36px; border: 0; border-radius: 4px; padding: 7px 5px;
+      color: white; background: #6f9f79af; font-size: 12px; font-weight: 700;
+      text-align: center; line-height: 1.2;
+    }
+    .inline-buttons button:hover, .inline-buttons button:focus-visible { background: #568e65e0; }
+    .inline-buttons button.current { background: #5e9d6ed9; }
+    .inline-buttons button[disabled] { opacity: .58; cursor: default; }
+    .inline-buttons button.wide { grid-column: 1 / -1; }
+    .inline-buttons button.top-gap { margin-top: 4px; }
+    .composer { display: flex; align-items: center; gap: 8px; padding: 9px 11px; background: #f9fbf9; }
+    .composer .attach { color: #708a79; font-size: 21px; }
+    .composer input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; padding: 7px 3px; color: var(--ink); }
+    .composer button { border: 0; background: transparent; color: #4b9562; font-size: 22px; }
+    .side { display: grid; gap: 14px; }
+    .panel { padding: 17px 18px; border: 1px solid var(--line); border-radius: 13px; background: #fff; }
+    .panel h2 { margin: 0 0 10px; font-size: 16px; }
+    .panel p { margin: 0; color: #526257; }
+    .steps { margin: 0; padding-left: 21px; }
+    .steps li { padding: 4px 0; color: #516455; }
+    .steps li.active { color: #237647; font-weight: 700; }
+    .note { border-left: 3px solid #5c9c70; padding-left: 10px; margin-top: 12px !important; font-size: 12px; }
+    .scope { margin-top: 9px; padding: 10px; border-radius: 8px; background: #edf5ed; color: #3e6248; font-size: 12px; }
+    .links { display: flex; flex-wrap: wrap; gap: 6px; }
+    .links button { border: 1px solid #c5dccb; border-radius: 7px; padding: 5px 8px; color: #287947; background: #f8fcf8; font-size: 12px; }
+    .links button:hover { background: #e7f5e9; }
+    @media (max-width: 800px) { .layout { grid-template-columns: 1fr; max-width: 480px; margin: auto; } .page { padding: 15px 12px 28px; } }
+    @media (max-width: 390px) { .inline-buttons button { font-size: 11px; } .topic-header { gap: 6px; } }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>AIR8 Expert Assistant · Telegram Topics</h1>
+    <p class="lead">Review an Insight, open linked Research, or explore a News Signals comment. Tap the buttons inside the phone to follow the flow.</p>
+    <div class="scenario-picker" aria-label="Choose a demo scenario">
+      <button id="showInsight" class="active" type="button">Insight Review + Research</button>
+      <button id="showNews" type="button">News Signals Comments</button>
+    </div>
+    <div class="layout">
+      <section class="phone" aria-label="Telegram conversation mockup">
+        <div class="phone-status"><span>9:41</span><span>▴  4G  ▰</span></div>
+        <header class="topic-header">
+          <button class="back" id="backButton" type="button" aria-label="Back to the review">‹</button>
+          <div class="avatar" id="topicAvatar">O</div>
+          <button class="header-title topic-switcher" id="topicMenu" type="button" aria-label="Switch topic" aria-expanded="false"><span><span class="topic-name" id="topicTitle">Output Validation</span><span class="bot-name">In Expert Review Bot</span></span><span class="topic-chevron" aria-hidden="true">⌄</span></button>
+          <span class="header-icon" aria-hidden="true">⌕</span><span class="header-icon" aria-hidden="true">⋮</span>
+        </header>
+        <div class="topic-menu" id="topicMenuPanel" hidden></div>
+        <div class="conversation">
+          <svg class="wallpaper" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="doodles" x="0" y="0" width="175" height="155" patternUnits="userSpaceOnUse" patternTransform="rotate(-7)">
+                <g fill="none" stroke="#598b65" stroke-width="1.1" opacity=".33" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M19 17c12-7 23 5 16 17-5 8-17 9-23 0-5-7-1-14 7-17Zm4 6 6 5-6 6-6-6 6-5Z"/>
+                  <path d="M105 18c5-6 15-7 19 0 4 6 0 13-5 17-7 6-16 5-20-2-4-6 0-12 6-15Z"/>
+                  <path d="M104 23c5-1 10 3 10 8m29-12 4 8 9 1-7 6 2 9-8-5-8 5 2-9-7-6 9-1 4-8Z"/>
+                  <path d="M24 87c9-10 26-9 35 1 5 6 3 16-3 22-11 12-29 8-35-4-4-7-2-14 3-19Z"/>
+                  <path d="M30 91c4-2 7 2 8 5m14-5c-4-2-7 2-8 5m-15 9c7 7 15 7 22 0"/>
+                  <path d="M100 86c8-8 18-7 26 0 8 7 7 19-1 25-9 7-21 5-26-4-5-8-5-14 1-21Z"/>
+                  <path d="M106 91c4-4 10-4 14 0m-12 12c3 4 9 4 12 0"/>
+                  <path d="M70 50 80 43l-2 10 9 5-11 2-4 10-3-9-10-2 11-5Zm87 51 9 4-9 4-4 9-4-9-8-4 8-4 4-8 4 8Z"/>
+                  <path d="M14 133c5-5 11-5 16 0m46-9c-3 6-2 11 3 16m64-12c7-6 13-6 19 0"/>
+                </g>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#doodles)"/>
+          </svg>
+          <div class="messages" id="messages" aria-live="polite"></div>
+        </div>
+        <div class="composer"><span class="attach" aria-hidden="true">⌁</span><input id="replyInput" aria-label="Sample expert reply" placeholder="Message"><button id="sendText" type="button" aria-label="Send sample reply">➤</button></div>
+      </section>
+      <aside class="side">
+        <div class="panel">
+          <h2 id="sideTitle">Insight review flow</h2>
+          <ol class="steps" id="steps"></ol>
+          <p class="note" id="sideNote"></p>
+        </div>
+        <div class="panel">
+          <h2>What gets recorded</h2>
+          <p>Notion keeps the Insight version, the expert's original words, linked Research, the decision, and Supplier scope. News Signals comments stay with their news item; Research does not approve an Insight.</p>
+          <div class="scope">Knowledge remains the fourth Topic, reserved for the next phase. This prototype does not simulate publishing to a knowledge base.</div>
+        </div>
+      </aside>
+    </div>
+  </main>
+  <script>
+    const title = document.getElementById("topicTitle");
+    const avatar = document.getElementById("topicAvatar");
+    const messages = document.getElementById("messages");
+    const input = document.getElementById("replyInput");
+    const topicMenu = document.getElementById("topicMenu");
+    const topicMenuPanel = document.getElementById("topicMenuPanel");
+    let scene = "insight";
+    let topicMenuOpen = false;
+    let customReply = "";
+    let researchQuestion = "";
+    let linkedResearchQuestion = "";
+    let newsComment = "";
+    const detail = {
+      insight: ["Review request received", "Open linked Research", "Check evidence", "Return to this Insight", "Submit a decision"],
+      news: ["Receive the daily batch", "Comment by item number", "Get a brief acknowledgment", "Close and record comments"]
+    };
+    const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+    function bubble(content, who = "bot", time = "18:16") {
+      return `<div class="message-unit ${who === "expert" ? "expert-unit" : ""}"><div class="bubble ${who}">${content}<div class="stamp">${time}${who === "expert" ? " ✓✓" : ""}</div></div></div>`;
+    }
+    function keyboard(buttons) {
+      return `<div class="inline-buttons">${buttons.map(b => `<button type="button" data-go="${b.go}" class="${b.wide ? "wide" : ""}">${escapeHtml(b.label)}</button>`).join("")}</div>`;
+    }
+    const primaryButtons = [
+      {label:"Research",go:"research"},
+      {label:"A — Approved",go:"approved"},
+      {label:"B — Needs changes",go:"needsPrompt"},
+      {label:"More options",go:"moreOptions"}
+    ];
+    const secondaryButtons = [
+      {label:"C — Comment only",go:"commentPrompt"},
+      {label:"D — Need more time",go:"later"},
+      {label:"Back",go:"insight",wide:true}
+    ];
+    function reviewCard(brief = false, actions = "primary") {
+      const content = brief
+        ? `<strong>Original Insight · current version v3</strong><br>The Research summary is attached. Please judge the current conclusion and its Supplier scope.`
+        : `<strong>Apparel · Insight Validation</strong><br><br><strong>EU chemical limits are live. PFHxA proof matters. Buyers ask earlier.</strong><br><br>Event: EU chemical requirements are in force, and buyers are asking for compliance proof earlier.<br>Proposed action: Suppliers should prepare PFHxA evidence in advance.<br><span class="small">Review scope: shared event logic + the three Suppliers below. If applicability differs, choose B and explain.<br><a href="#" data-material="true">Event card ↗</a> · <a href="#" data-material="true">Supplier A ↗</a> · <a href="#" data-material="true">Supplier B ↗</a> · <a href="#" data-material="true">Supplier C ↗</a><br>Review material v3</span>`;
+      return bubble(content) + (actions === "primary" ? keyboard(primaryButtons) : actions === "secondary" ? keyboard(secondaryButtons) : "");
+    }
+    function renderTopicMenu() {
+      topicMenuPanel.hidden = !topicMenuOpen;
+      topicMenu.ariaExpanded = String(topicMenuOpen);
+      topicMenuPanel.innerHTML = [
+        ["validation", "Output Validation"], ["research", "Research"],
+        ["news", "News Signals"], ["knowledge", "Knowledge"]
+      ].map(([key, label]) => `<button type="button" data-topic="${key}">${label}</button>`).join("");
+      topicMenuPanel.querySelectorAll("button[data-topic]").forEach(button => button.addEventListener("click", () => {
+        topicMenuOpen = false;
+        const key = button.dataset.topic;
+        const reviewScenes = ["insight", "review", "moreOptions", "needsPrompt", "commentPrompt", "research"];
+        navigate(key === "validation" ? (scene === "research" ? "review" : "insight") :
+          key === "research" ? (reviewScenes.includes(scene) ? "research" : "independentResearch") : key);
+      }));
+    }
+    function render() {
+      const topic = scene === "news" ? "News Signals" : scene === "knowledge" ? "Knowledge" :
+        ["research", "independentResearch"].includes(scene) ? "Research" : "Output Validation";
+      title.textContent = topic;
+      avatar.textContent = topic[0];
+      document.getElementById("showInsight").classList.toggle("active", !["news", "knowledge"].includes(scene));
+      document.getElementById("showNews").classList.toggle("active", scene === "news");
+      document.getElementById("sideTitle").textContent = scene === "news" ? "News Signals comment flow" : "Insight review flow";
+      const steps = scene === "news" ? detail.news : detail.insight;
+      const stepIndex = ({insight:0,research:2,independentResearch:2,review:3,moreOptions:0,approved:4,needsPrompt:4,needsDone:4,commentPrompt:4,commentDone:4,later:4,news:3,knowledge:0})[scene] ?? 0;
+      document.getElementById("steps").innerHTML = steps.map((label, i) => `<li class="${i === stepIndex ? "active" : ""}">${escapeHtml(label)}</li>`).join("");
+      document.getElementById("sideNote").textContent = scene === "research" ?
+        "This Research thread is linked to Insight v3. Evidence supports the review but never approves it automatically." :
+        scene === "news" ? "Comments are attached to News Signals. Closing the batch does not create an Insight approval." :
+        scene === "needsPrompt" || scene === "commentPrompt" ? "A choice that needs an explanation waits for the expert's text before it is recorded." :
+        "The first Insight message has four actions. C and D are under More options; all four Topics are available from the header.";
+      let html = `<div class="date">Today</div>`;
+      if (scene === "insight") {
+        html += reviewCard();
+      } else if (scene === "moreOptions") {
+        html += reviewCard(false, "secondary");
+      } else if (scene === "research") {
+        html += bubble("<strong>Linked to Output Validation</strong><br>Original Insight: EU chemical limits are live.<br>Insight v3 · 3 Suppliers<br><br>What should we verify first?", "bot", "18:18");
+        html += bubble("Has Germany started enforcing the PFHxA restriction?", "expert", "18:19");
+        html += bubble("<strong>Research summary</strong><br>Check the product category and use case against the applicable guidance.<br><span class=\"small\">Example source: German authority guidance ↗<br>Open point: Supplier B's product evidence has not been reviewed.</span>", "bot", "18:20");
+        if (linkedResearchQuestion) {
+          html += bubble(escapeHtml(linkedResearchQuestion), "expert", "18:21");
+          html += bubble("Follow-up question received. The full product would continue the search with sources; this question remains linked to Insight v3.", "bot", "18:21");
+        }
+        html += keyboard([{label:"Back to Output Validation ↗",go:"review",wide:true}]);
+      } else if (scene === "independentResearch") {
+        html += bubble("<strong>Research · independent question</strong><br>Ask about an industry, policy, company, or supply chain. The full conversation and sources belong in your Research record.", "bot", "10:10");
+        if (researchQuestion) {
+          html += bubble(escapeHtml(researchQuestion), "expert", "10:11");
+          html += bubble("Question received. The full product would search and return sources; this prototype shows the entry point only.", "bot", "10:11");
+        }
+      } else if (scene === "review") {
+        html += reviewCard(true);
+      } else if (scene === "approved") {
+        html += reviewCard(true, false);
+        html += bubble("A — Approved", "expert", "18:21");
+        html += bubble("<strong>Approval recorded</strong><br>Your decision covers Insight v3 and its stated Supplier scope. No further action is needed for this review.", "bot", "18:22");
+      } else if (scene === "needsPrompt") {
+        html += reviewCard(true, false);
+        html += bubble("Please say what needs to change and which Suppliers are affected.", "bot", "18:22");
+      } else if (scene === "needsDone") {
+        html += reviewCard(true, false);
+        html += bubble(escapeHtml(customReply || "Supplier B needs product-specific PFHxA evidence."), "expert", "18:23");
+        html += bubble("<strong>Change request recorded</strong><br>The team will review your Supplier-specific evidence request.", "bot", "18:23");
+      } else if (scene === "commentPrompt") {
+        html += reviewCard(true, false);
+        html += bubble("Add your observation. This records a comment only, not an approval or change decision.", "bot", "18:22");
+      } else if (scene === "commentDone") {
+        html += reviewCard(true, false);
+        html += bubble(escapeHtml(customReply || "Buyer requests appear earlier, but the impact still needs monitoring."), "expert", "18:23");
+        html += bubble("Comment saved. This Insight still has no formal review decision.", "bot", "18:23");
+      } else if (scene === "later") {
+        html += reviewCard(true, false);
+        html += bubble("D — Need more time", "expert", "18:21");
+        html += bubble("More time noted. This Insight remains pending in Output Validation.", "bot", "18:22");
+      } else if (scene === "news") {
+        html += bubble("<strong>Daily News Signals · Apparel</strong><br><br><strong>#1</strong> EU chemical compliance update<br><strong>#2</strong> Buyers request proof earlier<br><strong>#3</strong> Asian sourcing shifts<br><br>Comment by item number; you can skip items with no feedback.", "bot", "10:00");
+        html += bubble("#2 This trend is real, but mainly among larger European buyers so far.", "expert", "10:07");
+        html += bubble("Got it — noted for #2.", "bot", "10:07");
+        html += bubble("That's all for today.", "expert", "10:08");
+        html += bubble("Today's feedback: #2 mainly affects larger European buyers; no additions for #1 or #3.<br><span class=\"small\">Reply here if you need to correct anything.</span>", "bot", "10:08");
+        if (newsComment) {
+          html += bubble(escapeHtml(newsComment), "expert", "10:09");
+          html += bubble("Update received and linked to this News Signals batch.", "bot", "10:09");
+        }
+      } else if (scene === "knowledge") {
+        html += bubble("<strong>Knowledge</strong><br>Expert confirmation of high-value knowledge candidates will open in a later phase. Your review and Research contributions stay in their original records.", "bot", "10:10");
+      }
+      messages.innerHTML = html;
+      messages.querySelectorAll("button[data-go]").forEach(button => button.addEventListener("click", () => navigate(button.dataset.go)));
+      messages.querySelectorAll("a[data-material]").forEach(link => link.addEventListener("click", event => event.preventDefault()));
+      input.placeholder = scene === "needsPrompt" ? "Describe the needed changes…" : scene === "commentPrompt" ? "Add your comment…" : scene === "knowledge" ? "Knowledge is not yet open" : "Message";
+      input.disabled = ["knowledge", "approved", "needsDone", "commentDone", "later"].includes(scene);
+      document.getElementById("sendText").disabled = input.disabled;
+      renderTopicMenu();
+    }
+    function navigate(next) {
+      topicMenuOpen = false;
+      scene = next;
+      render();
+    }
+    function sendText() {
+      if (input.disabled) return;
+      const value = input.value.trim();
+      if (!value) return;
+      customReply = value;
+      input.value = "";
+      if (scene === "needsPrompt") scene = "needsDone";
+      else if (scene === "commentPrompt") scene = "commentDone";
+      else if (scene === "independentResearch") researchQuestion = value;
+      else if (scene === "research") linkedResearchQuestion = value;
+      else if (scene === "news") newsComment = value;
+      else if (["insight", "review", "moreOptions"].includes(scene)) {
+        const choice = value.match(/^([ABCD])(?:\s|[.:—-]|$)/i)?.[1].toUpperCase();
+        if (choice === "A") scene = "approved";
+        else if (choice === "B") scene = value.length === 1 ? "needsPrompt" : "needsDone";
+        else if (choice === "D") scene = "later";
+        else scene = "commentDone";
+      }
+      render();
+    }
+    topicMenu.addEventListener("click", () => { topicMenuOpen = !topicMenuOpen; renderTopicMenu(); });
+    document.getElementById("showInsight").addEventListener("click", () => navigate("insight"));
+    document.getElementById("showNews").addEventListener("click", () => navigate("news"));
+    document.getElementById("backButton").addEventListener("click", () => navigate(scene === "research" ? "review" : "insight"));
+    document.getElementById("sendText").addEventListener("click", sendText);
+    input.addEventListener("keydown", event => { if (event.key === "Enter") sendText(); });
+    render();
+  </script>
+</body>
+</html>
